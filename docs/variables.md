@@ -243,7 +243,9 @@ For `Template`-level metrics:
 | Variable | Description|
 |----------|------------|
 | `workflow.name` | Workflow name |
+| `workflow.templateName` | Workflow template name. This works only for template names, it may give wrong answers for non-generated names |
 | `workflow.namespace` | Workflow namespace |
+| `workflow.main entrypoint` | Workflow's initial entrypoint |
 | `workflow.serviceAccountName` | Workflow service account name |
 | `workflow.uid` | Workflow UID. Useful for setting ownership reference to a resource, or a unique artifact location |
 | `workflow.parameters.<NAME>` | Input parameter to the workflow |

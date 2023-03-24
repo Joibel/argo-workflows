@@ -552,10 +552,23 @@ func (woc *wfOperationCtx) getWorkflowDeadline() *time.Time {
 	return &deadline
 }
 
+// templateNameFromName tries to strip the suffix for a cronworkflow [\d]{10} or from a
+// generateName [a-z0-9]{5} from the name.
+var templateNameFromName = regexp.MustCompile(`^(.{3,}?)(\-?[\d]{10})?(\-?[a-z0-9]{5})?$`)
+
+func getTemplateNameFromName(name string) string {
+	if templateNameFromName.MatchString(name) {
+		return templateNameFromName.ReplaceAllString(name, "$1")
+	}
+	return name
+}
+
 // setGlobalParameters sets the globalParam map with global parameters
 func (woc *wfOperationCtx) setGlobalParameters(executionParameters wfv1.Arguments) error {
 	woc.globalParams[common.GlobalVarWorkflowName] = woc.wf.ObjectMeta.Name
+	woc.globalParams[common.GlobalVarWorkflowTemplateName] = getTemplateNameFromName(woc.wf.ObjectMeta.Name)
 	woc.globalParams[common.GlobalVarWorkflowNamespace] = woc.wf.ObjectMeta.Namespace
+	woc.globalParams[common.GlobalVarWorkflowMainEntrypoint] = woc.execWf.Spec.Entrypoint
 	woc.globalParams[common.GlobalVarWorkflowServiceAccountName] = woc.execWf.Spec.ServiceAccountName
 	woc.globalParams[common.GlobalVarWorkflowUID] = string(woc.wf.ObjectMeta.UID)
 	woc.globalParams[common.GlobalVarWorkflowCreationTimestamp] = woc.wf.ObjectMeta.CreationTimestamp.Format(time.RFC3339)
