@@ -17,6 +17,8 @@ import (
 	workflow "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
 	wfv1alpha1 "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned/typed/workflow/v1alpha1"
 	"github.com/argoproj/argo-workflows/v3/util/retry"
+	"github.com/argoproj/argo-workflows/v3/util/env"
+	log "github.com/sirupsen/logrus"
 	waitutil "github.com/argoproj/argo-workflows/v3/util/wait"
 	executor "github.com/argoproj/argo-workflows/v3/workflow/artifacts"
 	"github.com/argoproj/argo-workflows/v3/workflow/common"
@@ -52,17 +54,70 @@ func NewArtifactDeleteCommand() *cobra.Command {
 	}
 }
 
-func deleteArtifacts(labelSelector string, ctx context.Context, artifactGCTaskInterface wfv1alpha1.WorkflowArtifactGCTaskInterface) error {
 
+type response struct {
+	Task     *v1alpha1.WorkflowArtifactGCTask
+	Err      error
+}
+
+func deleteArtifacts(labelSelector string, ctx context.Context, artifactGCTaskInterface wfv1alpha1.WorkflowArtifactGCTaskInterface) error {
+	log.Infof("Welcome to delete 1.0")
 	taskList, err := artifactGCTaskInterface.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return err
 	}
+	taskWorkers := env.LookupEnvIntOr(common.EnvAgentTaskWorkers, 16)
+
+	taskQueue := make(chan *v1alpha1.WorkflowArtifactGCTask)
+	responseQueue := make(chan response)
+	for i := 0; i < taskWorkers; i++ {
+		go deleteWorker(ctx, taskQueue, responseQueue)
+	}
 
 	for _, task := range taskList.Items {
+		taskQueue <- &task
+	}
+	close(taskQueue)
+	completed := 0
+	for {
+		response, _ := <- responseQueue
+		log.Infof("Delete response received, completed %d", completed)
+		task, err := response.Task, response.Err
+		if err != nil {
+			return err
+		}
+		if task == nil {
+			log.Infof("Completed")
+			completed++
+			if completed >= taskWorkers {
+				break
+			}
+		} else {
+			patch, err := json.Marshal(map[string]interface{}{"status": v1alpha1.ArtifactGCStatus{ArtifactResultsByNode: task.Status.ArtifactResultsByNode}})
+			if err != nil {
+				return err
+			}
+			_, err = artifactGCTaskInterface.Patch(context.Background(), task.Name, types.MergePatchType, patch, metav1.PatchOptions{}, "status")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func deleteWorker(ctx context.Context, taskQueue chan *v1alpha1.WorkflowArtifactGCTask, responseQueue chan response) {
+	for {
+		task, ok := <- taskQueue
+		if !ok {
+			// Done
+			log.Infof("Worker is done")
+			break
+		}
+		log.Infof("Worker has task")
 		task.Status.ArtifactResultsByNode = make(map[string]v1alpha1.ArtifactResultNodeStatus)
 		for nodeName, artifactNodeSpec := range task.Spec.ArtifactsByNode {
-
 			var archiveLocation *v1alpha1.ArtifactLocation
 			artResultNodeStatus := v1alpha1.ArtifactResultNodeStatus{ArtifactResults: make(map[string]v1alpha1.ArtifactResult)}
 			if artifactNodeSpec.ArchiveLocation != nil {
@@ -75,13 +130,14 @@ func deleteArtifacts(labelSelector string, ctx context.Context, artifactGCTaskIn
 				if archiveLocation != nil {
 					err := artifact.Relocate(archiveLocation)
 					if err != nil {
-						return err
+						responseQueue <- response{Task: task, Err: err}
+						continue
 					}
 				}
-
 				drv, err := executor.NewDriver(ctx, &artifact, resources)
 				if err != nil {
-					return err
+					responseQueue <- response{Task: task, Err: err}
+					continue
 				}
 
 				err = waitutil.Backoff(retry.DefaultRetry, func() (bool, error) {
@@ -95,20 +151,13 @@ func deleteArtifacts(labelSelector string, ctx context.Context, artifactGCTaskIn
 					return true, err
 				})
 			}
-
 			task.Status.ArtifactResultsByNode[nodeName] = artResultNodeStatus
 		}
-		patch, err := json.Marshal(map[string]interface{}{"status": v1alpha1.ArtifactGCStatus{ArtifactResultsByNode: task.Status.ArtifactResultsByNode}})
-		if err != nil {
-			return err
-		}
-		_, err = artifactGCTaskInterface.Patch(context.Background(), task.Name, types.MergePatchType, patch, metav1.PatchOptions{}, "status")
-		if err != nil {
-			return err
-		}
+		log.Infof("Worker sending complete")
+		responseQueue <- response{Task: task, Err: nil}
 	}
-
-	return nil
+	log.Infof("Worker sending done")
+	responseQueue <- response{Task: nil, Err: nil}
 }
 
 type resources struct {
