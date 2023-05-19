@@ -113,7 +113,9 @@ func deleteWorker(ctx context.Context, taskQueue chan *v1alpha1.WorkflowArtifact
 		if !ok {
 			// Done
 			log.Infof("Worker is done")
-			break
+			log.Infof("Worker sending done")
+			responseQueue <- response{Task: nil, Err: nil}
+			return
 		}
 		log.Infof("Worker has task")
 		task.Status.ArtifactResultsByNode = make(map[string]v1alpha1.ArtifactResultNodeStatus)
@@ -156,8 +158,6 @@ func deleteWorker(ctx context.Context, taskQueue chan *v1alpha1.WorkflowArtifact
 		log.Infof("Worker sending complete")
 		responseQueue <- response{Task: task, Err: nil}
 	}
-	log.Infof("Worker sending done")
-	responseQueue <- response{Task: nil, Err: nil}
 }
 
 type resources struct {
