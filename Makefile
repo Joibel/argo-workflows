@@ -118,6 +118,7 @@ endif
 
 ARGOEXEC_PKGS    := $(shell echo cmd/argoexec            && go list -f '{{ join .Deps "\n" }}' ./cmd/argoexec/            | grep 'argoproj/argo-workflows/v3/' | cut -c 39-)
 CLI_PKGS         := $(shell echo cmd/argo                && go list -f '{{ join .Deps "\n" }}' ./cmd/argo/                | grep 'argoproj/argo-workflows/v3/' | cut -c 39-)
+CLI_PKG_FILES    := $(shell find $(CLI_PKGS) -type f -name \*.go)
 CONTROLLER_PKGS  := $(shell echo cmd/workflow-controller && go list -f '{{ join .Deps "\n" }}' ./cmd/workflow-controller/ | grep 'argoproj/argo-workflows/v3/' | cut -c 39-)
 TYPES := $(shell find pkg/apis/workflow/v1alpha1 -type f -name '*.go' -not -name openapi_generated.go -not -name '*generated*' -not -name '*test.go')
 CRDS := $(shell find manifests/base/crds -type f -name 'argoproj.io_*.yaml')
@@ -191,16 +192,16 @@ dist/argo-windows-amd64: GOARGS = GOOS=windows GOARCH=amd64
 dist/argo-windows-%.gz: dist/argo-windows-%
 	gzip --force --keep dist/argo-windows-$*.exe
 
-dist/argo-windows-%: server/static/files.go $(CLI_PKGS) go.sum
+dist/argo-windows-%: server/static/files.go $(CLI_PKG_FILES) go.sum
 	CGO_ENABLED=0 $(GOARGS) go build -v -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS} -extldflags -static' -o $@.exe ./cmd/argo
 
 dist/argo-%.gz: dist/argo-%
 	gzip --force --keep dist/argo-$*
 
-dist/argo-%: server/static/files.go $(CLI_PKGS) go.sum
+dist/argo-%: server/static/files.go $(CLI_PKG_FILES) go.sum
 	CGO_ENABLED=0 $(GOARGS) go build -v -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS} -extldflags -static' -o $@ ./cmd/argo
 
-dist/argo: server/static/files.go $(CLI_PKGS) go.sum
+dist/argo: server/static/files.go $(CLI_PKG_FILES) go.sum
 ifeq ($(shell uname -s),Darwin)
 	# if local, then build fast: use CGO and dynamic-linking
 	go build -v -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS}' -o $@ ./cmd/argo
@@ -670,7 +671,7 @@ docs/fields.md: api/openapi-spec/swagger.json $(shell find examples -type f) hac
 	env ARGO_SECURE=false ARGO_INSECURE_SKIP_VERIFY=false ARGO_SERVER= ARGO_INSTANCEID= go run ./hack docgen
 
 # generates several other files
-docs/cli/argo.md: $(CLI_PKGS) go.sum server/static/files.go hack/cli/main.go
+docs/cli/argo.md: $(CLI_PKG_FILES) go.sum server/static/files.go hack/cli/main.go
 	go run ./hack/cli
 
 # docs
