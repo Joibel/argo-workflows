@@ -4,7 +4,9 @@ package e2e
 
 import (
 	"fmt"
+	"runtime"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -23,6 +25,39 @@ import (
 
 type CronSuite struct {
 	fixtures.E2ESuite
+	ts map[string]*testing.T // Map of test names > *testing.T
+}
+
+// T() overrides suite.Suite.T() with a way to find the proper *testing.T
+// for the current test.
+// This relies on `BeforeTest` storing the *testing.T pointers in a map
+// before marking them parallel.
+// This is a huge hack to make parallel testing work until
+// https://github.com/stretchr/testify/issues/187 is fixed.
+// There is still a small race:
+// 1. test 1 calls SetT()
+// 2. test 1 calls BeforeTest() with its own T
+// 3. test 1 is marked as parallel and starts executing
+// 4. test 2 calls SetT()
+// 5. test 1 completes and calls SetT() to reset to the parent T
+// 6. test 2 calls BeforeTest() with its parent T instead of its own
+// The time between 4. & 6. is extremely low, and all these tests take many minutes to run.
+func (s *CronSuite) T() *testing.T {
+	// Try to find in the call stack a method name that is stored in `ts` (the test method).
+	for i := 1; ; i++ {
+		pc, _, _, ok := runtime.Caller(i)
+		if !ok {
+			break
+		}
+		splitFuncName := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+		funcName := splitFuncName[len(splitFuncName)-1]
+		t := s.ts[funcName]
+		if t != nil {
+			return t
+		}
+	}
+	// Fallback to the globally stored Suite.T()
+	return s.Suite.T()
 }
 
 func (s *CronSuite) SetupSuite() {
@@ -32,6 +67,12 @@ func (s *CronSuite) SetupSuite() {
 }
 
 func (s *CronSuite) BeforeTest(suiteName, testName string) {
+	t := s.T()
+	if s.ts == nil {
+		s.ts = make(map[string]*testing.T, 1)
+	}
+	s.ts[testName] = t
+	t.Parallel()
 	s.E2ESuite.BeforeTest(suiteName, testName)
 }
 
@@ -42,7 +83,6 @@ func (s *CronSuite) TearDownSuite() {
 
 func (s *CronSuite) TestBasic() {
 	s.Run("TestBasic", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -74,8 +114,10 @@ spec:
 				assert.True(t, cronWf.Status.LastScheduledTime.Time.After(time.Now().Add(-1*time.Minute)))
 			})
 	})
+}
+
+func (s *CronSuite) TestBasicTimezone() {
 	s.Run("TestBasicTimezone", func() {
-		s.T().Parallel()
 		// This test works by scheduling a CronWorkflow for the next minute, but using the local time of another timezone
 		// then seeing if the Workflow was ran within the next minute. Since this test would be trivial if the selected
 		// timezone was the same as the local timezone, a little-used timezone is used.
@@ -113,8 +155,10 @@ spec:
 				assert.True(t, cronWf.Status.LastScheduledTime.Time.After(time.Now().Add(-1*time.Minute)))
 			})
 	})
+}
+
+func (s *CronSuite) TestSuspend() {
 	s.Run("TestSuspend", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -145,8 +189,10 @@ spec:
 				assert.True(t, cronWf.Spec.Suspend)
 			})
 	})
+}
+
+func (s *CronSuite) TestResume() {
 	s.Run("TestResume", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -177,8 +223,10 @@ spec:
 				assert.False(t, cronWf.Spec.Suspend)
 			})
 	})
+}
+
+func (s *CronSuite) TestBasicForbid() {
 	s.Run("TestBasicForbid", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -211,8 +259,10 @@ spec:
 				assert.True(t, cronWf.Status.LastScheduledTime.Time.Before(time.Now().Add(-1*time.Minute)))
 			})
 	})
+}
+
+func (s *CronSuite) TestBasicAllow() {
 	s.Run("TestBasicAllow", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -246,8 +296,10 @@ spec:
 				assert.Equal(t, 2, len(cronWf.Status.Active))
 			})
 	})
+}
+
+func (s *CronSuite) TestBasicReplace() {
 	s.Run("TestBasicReplace", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -282,8 +334,10 @@ spec:
 				}
 			})
 	})
+}
+
+func (s *CronSuite) TestSuccessfulJobHistoryLimit() {
 	s.Run("TestSuccessfulJobHistoryLimit", func() {
-		s.T().Parallel()
 		var listOptions v1.ListOptions
 		wfInformerListOptionsFunc(&listOptions, "test-cron-wf-succeed-1")
 		s.Given().
@@ -317,8 +371,10 @@ spec:
 				assert.True(t, wfList.Items[0].Status.FinishedAt.Time.After(time.Now().Add(-1*time.Minute)))
 			})
 	})
+}
+
+func (s *CronSuite) TestFailedJobHistoryLimit() {
 	s.Run("TestFailedJobHistoryLimit", func() {
-		s.T().Parallel()
 		var listOptions v1.ListOptions
 		wfInformerListOptionsFunc(&listOptions, "test-cron-wf-fail-1")
 		s.Given().
@@ -353,8 +409,10 @@ spec:
 				assert.True(t, wfList.Items[0].Status.FinishedAt.Time.After(time.Now().Add(-1*time.Minute)))
 			})
 	})
+}
+
+func (s *CronSuite) TestStoppingConditionWithSucceeded() {
 	s.Run("TestStoppingConditionWithSucceeded", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -391,8 +449,10 @@ spec:
 				assert.Equal(t, "true", cronWf.Labels[common.LabelKeyCronWorkflowCompleted])
 			})
 	})
+}
+
+func (s *CronSuite) TestStoppingConditionWithFailed() {
 	s.Run("TestStoppingConditionWithFailed", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
@@ -426,8 +486,10 @@ spec:
 				assert.Equal(t, "true", cronWf.Labels[common.LabelKeyCronWorkflowCompleted])
 			})
 	})
+}
+
+func (s *CronSuite) TestMultipleWithTimezone() {
 	s.Run("TestMultipleWithTimezone", func() {
-		s.T().Parallel()
 		s.Given().
 			CronWorkflow(`apiVersion: argoproj.io/v1alpha1
 kind: CronWorkflow
