@@ -1,0 +1,65 @@
+name: test
+
+on: workflow_dispatch
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build & push windows
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      # - name: Docker Login
+      #   uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      #   with:
+      #     username: ${{ secrets.DOCKERIO_USERNAME }}
+      #     password: ${{ secrets.DOCKERIO_PASSWORD }}
+
+      # - name: Login to Quay
+      #   uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      #   with:
+      #     registry: quay.io
+      #     username: ${{ secrets.QUAYIO_USERNAME }}
+      #     password: ${{ secrets.QUAYIO_PASSWORD }}
+
+      - name: Build & Push Windows Docker Images
+        env:
+          DOCKERIO_ORG: ${{ secrets.DOCKERIO_ORG }}
+        run: |
+          docker_org=joibel
+
+          tag=$(basename $GITHUB_REF)
+          if [ $tag = "main" ]; then
+            tag="latest"
+          fi
+          powershell -Command New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
+          targets="argoexec"
+          for target in $targets; do
+            image_name="${docker_org}/${target}:${tag}-windows"
+            docker build \
+              --build-arg GIT_COMMIT=$tag \
+              --build-arg GIT_BRANCH=$branch \
+              --build-arg GIT_TREE_STATE=$tree_state \
+              --target $target \
+              -t $image_name \
+              -f Dockerfile.windows \
+              .
+
+            # docker push $image_name
+
+            # docker tag $image_name quay.io/$image_name
+            # docker push quay.io/$image_name
+
+          done
