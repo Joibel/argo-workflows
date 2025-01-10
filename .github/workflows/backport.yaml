@@ -32,5 +32,5 @@ jobs:
         uses: korthout/backport-action@be567af183754f6a5d831ae90f648954763f17f5 # v3.1.0
         with:
           label_pattern: ^backport/([^ ]+)$
-          pull_description: Automated backport of #${pull_number} to `${target_branch}`. Associated issues: ${issue_refs}
+          pull_description: "Automated backport of #${pull_number} to `${target_branch}`. Associated issues: ${issue_refs}"
           conflict_resolution: draft_commit_conflicts
