@@ -4,6 +4,7 @@ metadata:
   annotations:
     help: |
       Install `kit` by following https://github.com/kitproj/kit#install.
+      Do a nice dance.
 
       Run `kit up` to start argo.
 
