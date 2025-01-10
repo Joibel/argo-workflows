@@ -1,2 +1,2 @@
 <!-- markdownlint-disable-next-line MD041 -->
-See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md).
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) about backporting commits.
