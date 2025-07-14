@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	cmdutil "github.com/argoproj/argo-workflows/v3/util/cmd"
 	"github.com/argoproj/argo-workflows/v3/util/errors"
 )
 
@@ -197,6 +198,10 @@ func TestEmissary(t *testing.T) {
 
 func run(script string) error {
 	cmd := NewEmissaryCommand()
+	_, _, err := cmdutil.CmdContextWithLogger(cmd, "info", "text")
+	if err != nil {
+		return err
+	}
 	containerName = "main"
 	return cmd.RunE(cmd, append([]string{"sh", "-c"}, script))
 }

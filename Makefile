@@ -50,7 +50,7 @@ endif
 # -- test options
 E2E_WAIT_TIMEOUT      ?= 90s # timeout for wait conditions
 E2E_PARALLEL          ?= 20
-E2E_SUITE_TIMEOUT     ?= 15m
+E2E_SUITE_TIMEOUT     ?= 25m
 GOTEST                ?= go test -v -p 20
 ALL_BUILD_TAGS        ?= api,cli,cron,executor,examples,corefunctional,functional,plugins
 BENCHMARK_COUNT       ?= 6
@@ -504,7 +504,7 @@ manifests-validate:
 	kubectl apply --server-side --validate=strict --dry-run=server -f 'manifests/*.yaml'
 
 $(TOOL_GOLANGCI_LINT): Makefile
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOPATH`/bin v2.1.6
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b `go env GOPATH`/bin v2.2.2
 
 .PHONY: lint lint-go lint-ui
 lint: lint-go lint-ui features-validate
