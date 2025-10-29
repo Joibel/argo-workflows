@@ -72,6 +72,9 @@ func cleanDesc(desc string) string {
 	if index := strings.Index(desc, "+option"); index != -1 {
 		desc = desc[:index]
 	}
+	if index := strings.Index(desc, "+kubebuilder"); index != -1 {
+		desc = desc[:index]
+	}
 
 	if dep != "" && !strings.Contains(desc, "DEPRECATED") {
 		desc += dep

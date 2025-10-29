@@ -30,6 +30,7 @@ type CronWorkflowList struct {
 	Items           []CronWorkflow `json:"items" protobuf:"bytes,2,rep,name=items"`
 }
 
+// +kubebuilder:validation:Enum=Allow;Forbid;Replace
 type ConcurrencyPolicy string
 
 const (
@@ -41,6 +42,7 @@ const (
 const annotationKeyLatestSchedule = workflow.CronWorkflowFullName + "/last-used-schedule"
 
 // CronWorkflowSpec is the specification of a CronWorkflow
+// +kubebuilder:validation:XValidation:rule="!(has(self.schedule) && has(self.schedules))",message="only one of schedule or schedules can be specified"
 type CronWorkflowSpec struct {
 	// WorkflowSpec is the spec of the workflow to be run
 	WorkflowSpec WorkflowSpec `json:"workflowSpec" protobuf:"bytes,1,opt,name=workflowSpec,casttype=WorkflowSpec"`
@@ -50,6 +52,7 @@ type CronWorkflowSpec struct {
 	Suspend bool `json:"suspend,omitempty" protobuf:"varint,4,opt,name=suspend"`
 	// StartingDeadlineSeconds is the K8s-style deadline that will limit the time a CronWorkflow will be run after its
 	// original scheduled time if it is missed.
+	// +kubebuilder:validation:Minimum=0
 	StartingDeadlineSeconds *int64 `json:"startingDeadlineSeconds,omitempty" protobuf:"varint,5,opt,name=startingDeadlineSeconds"`
 	// SuccessfulJobsHistoryLimit is the number of successful jobs to be kept at a time
 	SuccessfulJobsHistoryLimit *int32 `json:"successfulJobsHistoryLimit,omitempty" protobuf:"varint,6,opt,name=successfulJobsHistoryLimit"`

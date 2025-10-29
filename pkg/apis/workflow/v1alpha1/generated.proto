@@ -59,6 +59,7 @@ message ArtGCStatus {
 // Artifact indicates an artifact to place at a specified path
 message Artifact {
   // name of the artifact. must be unique within a template's inputs/outputs.
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
   optional string name = 1;
 
   // Path is the container path to the artifact
@@ -453,6 +454,7 @@ message ContinueOn {
 // Counter is a Counter prometheus metric
 message Counter {
   // Value is the value of the metric
+  // +kubebuilder:validation:MinLength=1
   optional string value = 1;
 }
 
@@ -484,6 +486,7 @@ message CronWorkflowList {
 }
 
 // CronWorkflowSpec is the specification of a CronWorkflow
+// +kubebuilder:validation:XValidation:rule="!(has(self.schedule) && has(self.schedules))",message="only one of schedule or schedules can be specified"
 message CronWorkflowSpec {
   // WorkflowSpec is the spec of the workflow to be run
   optional WorkflowSpec workflowSpec = 1;
@@ -496,6 +499,7 @@ message CronWorkflowSpec {
 
   // StartingDeadlineSeconds is the K8s-style deadline that will limit the time a CronWorkflow will be run after its
   // original scheduled time if it is missed.
+  // +kubebuilder:validation:Minimum=0
   optional int64 startingDeadlineSeconds = 5;
 
   // SuccessfulJobsHistoryLimit is the number of successful jobs to be kept at a time
@@ -548,8 +552,14 @@ message CronWorkflowStatus {
 }
 
 // DAGTask represents a node in the graph during DAG execution
+// +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
 message DAGTask {
   // Name is the name of the target
+  // +kubebuilder:validation:MaxLength=128
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
   optional string name = 1;
 
   // Name of template to execute
@@ -613,6 +623,7 @@ message DAGTemplate {
   // Tasks are a list of DAG tasks
   // +patchStrategy=merge
   // +patchMergeKey=name
+  // +kubebuilder:validation:MinItems=1
   repeated DAGTask tasks = 2;
 
   // This flag is for DAG logic. The DAG logic has a built-in "fail fast" feature to stop scheduling new steps,
@@ -676,9 +687,11 @@ message GCSBucket {
 }
 
 // Gauge is a Gauge prometheus metric
+// +kubebuilder:validation:XValidation:rule="!has(self.realtime) || !self.realtime || !self.value.contains('resourcesDuration.')",message="'resourcesDuration.*' metrics cannot be used in real-time gauges"
 message Gauge {
   // Value is the value to be used in the operation with the metric's current value. If no operation is set,
   // value is the value of the metric
+  // +kubebuilder:validation:MinLength=1
   optional string value = 1;
 
   // Realtime emits this metric in real time if applicable
@@ -869,6 +882,7 @@ message Header {
 // Histogram is a Histogram prometheus metric
 message Histogram {
   // Value is the value of the metric
+  // +kubebuilder:validation:MinLength=1
   optional string value = 3;
 
   // Buckets is a list of bucket divisors for the histogram
@@ -981,6 +995,7 @@ message Metadata {
 
 // MetricLabel is a single label for a prometheus metric
 message MetricLabel {
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
   optional string key = 1;
 
   optional string value = 2;
@@ -1268,6 +1283,7 @@ message ParallelSteps {
 // Parameter indicate a passed string parameter to a service template with an optional default value
 message Parameter {
   // Name is the parameter name
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
   optional string name = 1;
 
   // Default is the default value to use for an input parameter if a value was not supplied
@@ -1335,12 +1351,14 @@ message PodGC {
 // Prometheus is a prometheus metric to be emitted
 message Prometheus {
   // Name is the name of the metric
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
   optional string name = 1;
 
   // Labels is a list of metric labels
   repeated MetricLabel labels = 2;
 
   // Help is a string that describes the metric
+  // +kubebuilder:validation:MinLength=1
   optional string help = 3;
 
   // When is a conditional statement that decides when to emit the metric
@@ -1363,13 +1381,16 @@ message RawArtifact {
 }
 
 // ResourceTemplate is a template subtype to manipulate kubernetes resources
+// +kubebuilder:validation:XValidation:rule="(has(self.manifest) && !has(self.manifestFrom)) || (!has(self.manifest) && has(self.manifestFrom)) || (!has(self.manifest) && !has(self.manifestFrom))",message="only one of manifest or manifestFrom can be specified"
 message ResourceTemplate {
   // Action is the action to perform to the resource.
   // Must be one of: get, create, apply, delete, replace, patch
+  // +kubebuilder:validation:Enum=get;create;apply;delete;replace;patch
   optional string action = 1;
 
   // MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"
   // Must be one of: strategic, merge, json
+  // +kubebuilder:validation:Enum=strategic;merge;json
   optional string mergeStrategy = 2;
 
   // Manifest contains the kubernetes manifest
@@ -1539,6 +1560,7 @@ message SemaphoreStatus {
 }
 
 // Sequence expands a workflow step into numeric range
+// +kubebuilder:validation:XValidation:rule="!(has(self.count) && has(self.end))",message="only one of count or end can be defined"
 message Sequence {
   // Count is number of elements in the sequence (default: 0). Not to be used with end
   optional k8s.io.apimachinery.pkg.util.intstr.IntOrString count = 1;
@@ -1664,8 +1686,11 @@ message TarStrategy {
 }
 
 // Template is a reusable and composable unit of execution in a workflow
+// +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
 message Template {
   // Name is the name of the template
+  // +kubebuilder:validation:MaxLength=128
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
   optional string name = 1;
 
   // Inputs describe what inputs parameters and artifacts are supplied to this template
@@ -1754,6 +1779,7 @@ message Template {
   // Parallelism limits the max total parallel pods that can execute at the same time within the
   // boundaries of this template invocation. If additional steps/dag templates are invoked, the
   // pods created by those templates will not be counted towards this total.
+  // +kubebuilder:validation:Minimum=1
   optional int64 parallelism = 23;
 
   // FailFast, if specified, will fail this template if any of its child pods has failed. This is useful for when this
@@ -2027,6 +2053,7 @@ message WorkflowSpec {
   repeated k8s.io.api.core.v1.PersistentVolumeClaim volumeClaimTemplates = 6;
 
   // Parallelism limits the max total parallel pods that can execute at the same time in a workflow
+  // +kubebuilder:validation:Minimum=1
   optional int64 parallelism = 7;
 
   // ArtifactRepositoryRef specifies the configMap name and key containing the artifact repository config.
@@ -2226,8 +2253,11 @@ message WorkflowStatus {
 }
 
 // WorkflowStep is a reference to a template to execute in a series of step
+// +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
 message WorkflowStep {
   // Name of the step
+  // +kubebuilder:validation:MaxLength=128
+  // +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
   optional string name = 1;
 
   // Template is the name of the template to execute as the step

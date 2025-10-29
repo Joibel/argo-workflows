@@ -1840,6 +1840,7 @@ spec:
                           name:
                             description: name of the artifact. must be unique within
                               a template's inputs/outputs.
+                            pattern: ^[a-zA-Z0-9_][-a-zA-Z0-9_]*$
                             type: string
                           optional:
                             description: Make Artifacts optional, if Artifacts doesn't
@@ -3022,6 +3023,7 @@ spec:
                             name:
                               description: name of the artifact. must be unique within
                                 a template's inputs/outputs.
+                              pattern: ^[a-zA-Z0-9_][-a-zA-Z0-9_]*$
                               type: string
                             optional:
                               description: Make Artifacts optional, if Artifacts doesn't
@@ -3398,6 +3400,7 @@ spec:
                               type: string
                             name:
                               description: Name is the parameter name
+                              pattern: ^[a-zA-Z0-9_][-a-zA-Z0-9_]*$
                               type: string
                             value:
                               description: |-
@@ -4354,6 +4357,7 @@ spec:
                     name:
                       description: name of the artifact. must be unique within a template's
                         inputs/outputs.
+                      pattern: ^[a-zA-Z0-9_][-a-zA-Z0-9_]*$
                       type: string
                     optional:
                       description: Make Artifacts optional, if Artifacts doesn't generate
@@ -4721,6 +4725,7 @@ spec:
                       type: string
                     name:
                       description: Name is the parameter name
+                      pattern: ^[a-zA-Z0-9_][-a-zA-Z0-9_]*$
                       type: string
                     value:
                       description: |-

@@ -230,7 +230,7 @@ It will marshall back to string - marshalling is not symmetric.
 | hdfs | [HDFSArtifact](#h-d-f-s-artifact)| `HDFSArtifact` |  | |  |  |
 | http | [HTTPArtifact](#http-artifact)| `HTTPArtifact` |  | |  |  |
 | mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts. |  |
-| name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs. |  |
+| name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs.</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | optional | boolean| `bool` |  | | Make Artifacts optional, if Artifacts doesn't generate or exist |  |
 | oss | [OSSArtifact](#o-s-s-artifact)| `OSSArtifact` |  | |  |  |
 | path | string| `string` |  | | Path is the container path to the artifact |  |
@@ -331,7 +331,7 @@ of a single workflow step, which the executor will use as a default location to 
 | hdfs | [HDFSArtifact](#h-d-f-s-artifact)| `HDFSArtifact` |  | |  |  |
 | http | [HTTPArtifact](#http-artifact)| `HTTPArtifact` |  | |  |  |
 | mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts. |  |
-| name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs. |  |
+| name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs.</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | optional | boolean| `bool` |  | | Make Artifacts optional, if Artifacts doesn't generate or exist |  |
 | oss | [OSSArtifact](#o-s-s-artifact)| `OSSArtifact` |  | |  |  |
 | path | string| `string` |  | | Path is the container path to the artifact |  |
@@ -954,7 +954,7 @@ ConfigMap volumes support ownership management and SELinux relabeling.
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| value | string| `string` |  | | Value is the value of the metric |  |
+| value | string| `string` |  | | Value is the value of the metric</br>+kubebuilder:validation:MinLength=1 |  |
 
 
 
@@ -980,6 +980,10 @@ ConfigMap volumes support ownership management and SELinux relabeling.
 
 
 > DAGTask represents a node in the graph during DAG execution
++kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
++kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
++kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
++kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
   
 
 
@@ -996,7 +1000,7 @@ ConfigMap volumes support ownership management and SELinux relabeling.
 | depends | string| `string` |  | | Depends are name of other targets which this depends on |  |
 | hooks | [LifecycleHooks](#lifecycle-hooks)| `LifecycleHooks` |  | |  |  |
 | inline | [Template](#template)| `Template` |  | |  |  |
-| name | string| `string` |  | | Name is the name of the target |  |
+| name | string| `string` |  | | Name is the name of the target</br>+kubebuilder:validation:MaxLength=128</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$` |  |
 | onExit | string| `string` |  | | OnExit is a template reference which is invoked at the end of the</br>template, irrespective of the success, failure, or error of the</br>primary template.</br>DEPRECATED: Use Hooks[exit].Template instead. |  |
 | template | string| `string` |  | | Name of template to execute |  |
 | templateRef | [TemplateRef](#template-ref)| `TemplateRef` |  | |  |  |
@@ -1023,7 +1027,7 @@ ConfigMap volumes support ownership management and SELinux relabeling.
 |------|------|---------|:--------:| ------- |-------------|---------|
 | failFast | boolean| `bool` |  | | This flag is for DAG logic. The DAG logic has a built-in "fail fast" feature to stop scheduling new steps,</br>as soon as it detects that one of the DAG nodes is failed. Then it waits until all DAG nodes are completed</br>before failing the DAG itself.</br>The FailFast flag default is true,  if set to false, it will allow a DAG to run all branches of the DAG to</br>completion (either success or failure), regardless of the failed outcomes of branches in the DAG.</br>More info and example about this feature at https://github.com/argoproj/argo-workflows/issues/1442 |  |
 | target | string| `string` |  | | Target are one or more names of targets to execute in a DAG |  |
-| tasks | [][DAGTask](#d-a-g-task)| `[]*DAGTask` |  | | Tasks are a list of DAG tasks</br>+patchStrategy=merge</br>+patchMergeKey=name |  |
+| tasks | [][DAGTask](#d-a-g-task)| `[]*DAGTask` |  | | Tasks are a list of DAG tasks</br>+patchStrategy=merge</br>+patchMergeKey=name</br>+kubebuilder:validation:MinItems=1 |  |
 
 
 
@@ -1435,6 +1439,7 @@ PDs support ownership management and SELinux relabeling.
 
 
 > Gauge is a Gauge prometheus metric
++kubebuilder:validation:XValidation:rule="!has(self.realtime) || !self.realtime || !self.value.contains('resourcesDuration.')",message="'resourcesDuration.*' metrics cannot be used in real-time gauges"
   
 
 
@@ -1447,7 +1452,7 @@ PDs support ownership management and SELinux relabeling.
 |------|------|---------|:--------:| ------- |-------------|---------|
 | operation | [GaugeOperation](#gauge-operation)| `GaugeOperation` |  | |  |  |
 | realtime | boolean| `bool` |  | | Realtime emits this metric in real time if applicable |  |
-| value | string| `string` |  | | Value is the value to be used in the operation with the metric's current value. If no operation is set,</br>value is the value of the metric |  |
+| value | string| `string` |  | | Value is the value to be used in the operation with the metric's current value. If no operation is set,</br>value is the value of the metric</br>+kubebuilder:validation:MinLength=1 |  |
 
 
 
@@ -1727,7 +1732,7 @@ into the Pod's container.
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
 | buckets | [][Amount](#amount)| `[]Amount` |  | | Buckets is a list of bucket divisors for the histogram |  |
-| value | string| `string` |  | | Value is the value of the metric |  |
+| value | string| `string` |  | | Value is the value of the metric</br>+kubebuilder:validation:MinLength=1 |  |
 
 
 
@@ -2152,7 +2157,7 @@ that the fieldset applies to.
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| key | string| `string` |  | |  |  |
+| key | string| `string` |  | | +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$` |  |
 | value | string| `string` |  | |  |  |
 
 
@@ -2560,7 +2565,7 @@ be cluster-scoped, so there is no namespace field.
 | description | [AnyString](#any-string)| `AnyString` |  | |  |  |
 | enum | [][AnyString](#any-string)| `[]AnyString` |  | | Enum holds a list of string values to choose from, for the actual value of the parameter |  |
 | globalName | string| `string` |  | | GlobalName exports an output parameter to the global scope, making it available as</br>'{{workflow.outputs.parameters.XXXX}} and in workflow.status.outputs.parameters |  |
-| name | string| `string` |  | | Name is the parameter name |  |
+| name | string| `string` |  | | Name is the parameter name</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | value | [AnyString](#any-string)| `AnyString` |  | |  |  |
 | valueFrom | [ValueFrom](#value-from)| `ValueFrom` |  | |  |  |
 
@@ -2966,10 +2971,10 @@ alive or ready to receive traffic.
 |------|------|---------|:--------:| ------- |-------------|---------|
 | counter | [Counter](#counter)| `Counter` |  | |  |  |
 | gauge | [Gauge](#gauge)| `Gauge` |  | |  |  |
-| help | string| `string` |  | | Help is a string that describes the metric |  |
+| help | string| `string` |  | | Help is a string that describes the metric</br>+kubebuilder:validation:MinLength=1 |  |
 | histogram | [Histogram](#histogram)| `Histogram` |  | |  |  |
 | labels | [][MetricLabel](#metric-label)| `[]*MetricLabel` |  | | Labels is a list of metric labels |  |
-| name | string| `string` |  | | Name is the name of the metric |  |
+| name | string| `string` |  | | Name is the name of the metric</br>+kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$` |  |
 | when | string| `string` |  | | When is a conditional statement that decides when to emit the metric |  |
 
 
@@ -3241,6 +3246,7 @@ cause implementors to also use a fixed point implementation.
 
 
 > ResourceTemplate is a template subtype to manipulate kubernetes resources
++kubebuilder:validation:XValidation:rule="(has(self.manifest) && !has(self.manifestFrom)) || (!has(self.manifest) && has(self.manifestFrom)) || (!has(self.manifest) && !has(self.manifestFrom))",message="only one of manifest or manifestFrom can be specified"
   
 
 
@@ -3251,12 +3257,12 @@ cause implementors to also use a fixed point implementation.
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| action | string| `string` |  | | Action is the action to perform to the resource.</br>Must be one of: get, create, apply, delete, replace, patch |  |
+| action | string| `string` |  | | Action is the action to perform to the resource.</br>Must be one of: get, create, apply, delete, replace, patch</br>+kubebuilder:validation:Enum=get;create;apply;delete;replace;patch |  |
 | failureCondition | string| `string` |  | | FailureCondition is a label selector expression which describes the conditions</br>of the k8s resource in which the step was considered failed |  |
 | flags | []string| `[]string` |  | | Flags is a set of additional options passed to kubectl before submitting a resource</br>I.e. to disable resource validation:</br>flags: [</br>"--validate=false"  # disable resource validation</br>] |  |
 | manifest | string| `string` |  | | Manifest contains the kubernetes manifest |  |
 | manifestFrom | [ManifestFrom](#manifest-from)| `ManifestFrom` |  | |  |  |
-| mergeStrategy | string| `string` |  | | MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"</br>Must be one of: strategic, merge, json |  |
+| mergeStrategy | string| `string` |  | | MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"</br>Must be one of: strategic, merge, json</br>+kubebuilder:validation:Enum=strategic;merge;json |  |
 | setOwnerReference | boolean| `bool` |  | | SetOwnerReference sets the reference to the workflow on the OwnerReference of generated resource. |  |
 | successCondition | string| `string` |  | | SuccessCondition is a label selector expression which describes the conditions</br>of the k8s resource in which it is acceptable to proceed to the following step |  |
 
@@ -3635,6 +3641,7 @@ are set, the values in SecurityContext take precedence.
 
 
 > Sequence expands a workflow step into numeric range
++kubebuilder:validation:XValidation:rule="!(has(self.count) && has(self.end))",message="only one of count or end can be defined"
   
 
 
@@ -3884,6 +3891,7 @@ of the first container processes are calculated.
 
 
 > Template is a reusable and composable unit of execution in a workflow
++kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
   
 
 
@@ -3913,10 +3921,10 @@ of the first container processes are calculated.
 | memoize | [Memoize](#memoize)| `Memoize` |  | |  |  |
 | metadata | [Metadata](#metadata)| `Metadata` |  | |  |  |
 | metrics | [Metrics](#metrics)| `Metrics` |  | |  |  |
-| name | string| `string` |  | | Name is the name of the template |  |
+| name | string| `string` |  | | Name is the name of the template</br>+kubebuilder:validation:MaxLength=128</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$` |  |
 | nodeSelector | map of string| `map[string]string` |  | | NodeSelector is a selector to schedule this step of the workflow to be</br>run on the selected node(s). Overrides the selector set at the workflow level. |  |
 | outputs | [Outputs](#outputs)| `Outputs` |  | |  |  |
-| parallelism | int64 (formatted integer)| `int64` |  | | Parallelism limits the max total parallel pods that can execute at the same time within the</br>boundaries of this template invocation. If additional steps/dag templates are invoked, the</br>pods created by those templates will not be counted towards this total. |  |
+| parallelism | int64 (formatted integer)| `int64` |  | | Parallelism limits the max total parallel pods that can execute at the same time within the</br>boundaries of this template invocation. If additional steps/dag templates are invoked, the</br>pods created by those templates will not be counted towards this total.</br>+kubebuilder:validation:Minimum=1 |  |
 | plugin | [Plugin](#plugin)| `Plugin` |  | |  |  |
 | podSpecPatch | string| `string` |  | | PodSpecPatch holds strategic merge patch to apply against the pod spec. Allows parameterization of</br>container fields which are not strings (e.g. resource limits). |  |
 | priorityClassName | string| `string` |  | | PriorityClassName to apply to workflow pods. |  |

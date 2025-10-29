@@ -145,7 +145,9 @@ definitions:
                 format: int32
                 type: integer
             name:
-                description: name of the artifact. must be unique within a template's inputs/outputs.
+                description: |-
+                    name of the artifact. must be unique within a template's inputs/outputs.
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             optional:
                 description: Make Artifacts optional, if Artifacts doesn't generate or exist
@@ -256,7 +258,9 @@ definitions:
                 format: int32
                 type: integer
             name:
-                description: name of the artifact. must be unique within a template's inputs/outputs.
+                description: |-
+                    name of the artifact. must be unique within a template's inputs/outputs.
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             optional:
                 description: Make Artifacts optional, if Artifacts doesn't generate or exist
@@ -1168,7 +1172,9 @@ definitions:
         description: Counter is a Counter prometheus metric
         properties:
             value:
-                description: Value is the value of the metric
+                description: |-
+                    Value is the value of the metric
+                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     CreateS3BucketOptions:
@@ -1179,7 +1185,12 @@ definitions:
                 type: boolean
         type: object
     DAGTask:
-        description: DAGTask represents a node in the graph during DAG execution
+        description: |-
+            DAGTask represents a node in the graph during DAG execution
+            +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
+            +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
+            +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
+            +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
         properties:
             arguments:
                 $ref: '#/definitions/Arguments'
@@ -1198,7 +1209,10 @@ definitions:
             inline:
                 $ref: '#/definitions/Template'
             name:
-                description: Name is the name of the target
+                description: |-
+                    Name is the name of the target
+                    +kubebuilder:validation:MaxLength=128
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
                 type: string
             onExit:
                 description: |-
@@ -1253,6 +1267,7 @@ definitions:
                     Tasks are a list of DAG tasks
                     +patchStrategy=merge
                     +patchMergeKey=name
+                    +kubebuilder:validation:MinItems=1
                 items:
                     $ref: '#/definitions/DAGTask'
                 type: array
@@ -1619,7 +1634,9 @@ definitions:
         title: GRPCAction specifies an action involving a GRPC service.
         type: object
     Gauge:
-        description: Gauge is a Gauge prometheus metric
+        description: |-
+            Gauge is a Gauge prometheus metric
+            +kubebuilder:validation:XValidation:rule="!has(self.realtime) || !self.realtime || !self.value.contains('resourcesDuration.')",message="'resourcesDuration.*' metrics cannot be used in real-time gauges"
         properties:
             operation:
                 $ref: '#/definitions/GaugeOperation'
@@ -1630,6 +1647,7 @@ definitions:
                 description: |-
                     Value is the value to be used in the operation with the metric's current value. If no operation is set,
                     value is the value of the metric
+                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     GaugeOperation:
@@ -1894,7 +1912,9 @@ definitions:
                     $ref: '#/definitions/Amount'
                 type: array
             value:
-                description: Value is the value of the metric
+                description: |-
+                    Value is the value of the metric
+                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     HostAlias:
@@ -2289,6 +2309,7 @@ definitions:
         description: MetricLabel is a single label for a prometheus metric
         properties:
             key:
+                description: +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
                 type: string
             value:
                 type: string
@@ -2620,7 +2641,9 @@ definitions:
                     '{{workflow.outputs.parameters.XXXX}} and in workflow.status.outputs.parameters
                 type: string
             name:
-                description: Name is the parameter name
+                description: |-
+                    Name is the parameter name
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             value:
                 $ref: '#/definitions/AnyString'
@@ -3296,7 +3319,9 @@ definitions:
             gauge:
                 $ref: '#/definitions/Gauge'
             help:
-                description: Help is a string that describes the metric
+                description: |-
+                    Help is a string that describes the metric
+                    +kubebuilder:validation:MinLength=1
                 type: string
             histogram:
                 $ref: '#/definitions/Histogram'
@@ -3306,7 +3331,9 @@ definitions:
                     $ref: '#/definitions/MetricLabel'
                 type: array
             name:
-                description: Name is the name of the metric
+                description: |-
+                    Name is the name of the metric
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
                 type: string
             when:
                 description: When is a conditional statement that decides when to emit the metric
@@ -3572,12 +3599,15 @@ definitions:
         title: ResourceResizeRestartPolicy specifies how to handle container resource resize.
         type: string
     ResourceTemplate:
-        description: ResourceTemplate is a template subtype to manipulate kubernetes resources
+        description: |-
+            ResourceTemplate is a template subtype to manipulate kubernetes resources
+            +kubebuilder:validation:XValidation:rule="(has(self.manifest) && !has(self.manifestFrom)) || (!has(self.manifest) && has(self.manifestFrom)) || (!has(self.manifest) && !has(self.manifestFrom))",message="only one of manifest or manifestFrom can be specified"
         properties:
             action:
                 description: |-
                     Action is the action to perform to the resource.
                     Must be one of: get, create, apply, delete, replace, patch
+                    +kubebuilder:validation:Enum=get;create;apply;delete;replace;patch
                 type: string
             failureCondition:
                 description: |-
@@ -3603,6 +3633,7 @@ definitions:
                 description: |-
                     MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"
                     Must be one of: strategic, merge, json
+                    +kubebuilder:validation:Enum=strategic;merge;json
                 type: string
             setOwnerReference:
                 description: SetOwnerReference sets the reference to the workflow on the OwnerReference of generated resource.
@@ -4205,7 +4236,9 @@ definitions:
                 type: string
         type: object
     Sequence:
-        description: Sequence expands a workflow step into numeric range
+        description: |-
+            Sequence expands a workflow step into numeric range
+            +kubebuilder:validation:XValidation:rule="!(has(self.count) && has(self.end))",message="only one of count or end can be defined"
         properties:
             count:
                 $ref: '#/definitions/IntOrString'
@@ -4371,7 +4404,9 @@ definitions:
                 type: integer
         type: object
     Template:
-        description: Template is a reusable and composable unit of execution in a workflow
+        description: |-
+            Template is a reusable and composable unit of execution in a workflow
+            +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
         properties:
             activeDeadlineSeconds:
                 $ref: '#/definitions/IntOrString'
@@ -4434,7 +4469,10 @@ definitions:
             metrics:
                 $ref: '#/definitions/Metrics'
             name:
-                description: Name is the name of the template
+                description: |-
+                    Name is the name of the template
+                    +kubebuilder:validation:MaxLength=128
+                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
                 type: string
             nodeSelector:
                 additionalProperties:
@@ -4450,6 +4488,7 @@ definitions:
                     Parallelism limits the max total parallel pods that can execute at the same time within the
                     boundaries of this template invocation. If additional steps/dag templates are invoked, the
                     pods created by those templates will not be counted towards this total.
+                    +kubebuilder:validation:Minimum=1
                 format: int64
                 type: integer
             plugin:

@@ -104,6 +104,7 @@ var AnyArtifactGCStrategy = map[ArtifactGCStrategy]bool{
 }
 
 // PodGCStrategy is the strategy when to delete completed pods for GC.
+// +kubebuilder:validation:Enum="";OnPodCompletion;OnPodSuccess;OnWorkflowCompletion;OnWorkflowSuccess
 type PodGCStrategy string
 
 func (s PodGCStrategy) IsValid() bool {
@@ -302,6 +303,7 @@ type WorkflowSpec struct {
 	VolumeClaimTemplates []apiv1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty" protobuf:"bytes,6,opt,name=volumeClaimTemplates"`
 
 	// Parallelism limits the max total parallel pods that can execute at the same time in a workflow
+	// +kubebuilder:validation:Minimum=1
 	Parallelism *int64 `json:"parallelism,omitempty" protobuf:"bytes,7,opt,name=parallelism"`
 
 	// ArtifactRepositoryRef specifies the configMap name and key containing the artifact repository config.
@@ -611,8 +613,11 @@ func (wfs *WorkflowSpec) HasPodSpecPatch() bool {
 }
 
 // Template is a reusable and composable unit of execution in a workflow
+// +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
 type Template struct {
 	// Name is the name of the template
+	// +kubebuilder:validation:MaxLength=128
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
 	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 
 	// Inputs describe what inputs parameters and artifacts are supplied to this template
@@ -701,6 +706,7 @@ type Template struct {
 	// Parallelism limits the max total parallel pods that can execute at the same time within the
 	// boundaries of this template invocation. If additional steps/dag templates are invoked, the
 	// pods created by those templates will not be counted towards this total.
+	// +kubebuilder:validation:Minimum=1
 	Parallelism *int64 `json:"parallelism,omitempty" protobuf:"bytes,23,opt,name=parallelism"`
 
 	// FailFast, if specified, will fail this template if any of its child pods has failed. This is useful for when this
@@ -959,6 +965,7 @@ type Metadata struct {
 // Parameter indicate a passed string parameter to a service template with an optional default value
 type Parameter struct {
 	// Name is the parameter name
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
 	// Default is the default value to use for an input parameter if a value was not supplied
@@ -1033,6 +1040,7 @@ type SuppliedValueFrom struct{}
 // Artifact indicates an artifact to place at a specified path
 type Artifact struct {
 	// name of the artifact. must be unique within a template's inputs/outputs.
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
 	// Path is the container path to the artifact
@@ -1599,8 +1607,11 @@ func (out *Outputs) GetArtifacts() Artifacts {
 }
 
 // WorkflowStep is a reference to a template to execute in a series of step
+// +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
 type WorkflowStep struct {
 	// Name of the step
+	// +kubebuilder:validation:MaxLength=128
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
 	Name string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 
 	// Template is the name of the template to execute as the step
@@ -1736,6 +1747,7 @@ func (s *WorkflowStep) ShouldExpand() bool {
 }
 
 // Sequence expands a workflow step into numeric range
+// +kubebuilder:validation:XValidation:rule="!(has(self.count) && has(self.end))",message="only one of count or end can be defined"
 type Sequence struct {
 	// Count is number of elements in the sequence (default: 0). Not to be used with end
 	Count *intstr.IntOrString `json:"count,omitempty" protobuf:"bytes,1,opt,name=count"`
@@ -3233,13 +3245,16 @@ type ScriptTemplate struct {
 }
 
 // ResourceTemplate is a template subtype to manipulate kubernetes resources
+// +kubebuilder:validation:XValidation:rule="(has(self.manifest) && !has(self.manifestFrom)) || (!has(self.manifest) && has(self.manifestFrom)) || (!has(self.manifest) && !has(self.manifestFrom))",message="only one of manifest or manifestFrom can be specified"
 type ResourceTemplate struct {
 	// Action is the action to perform to the resource.
 	// Must be one of: get, create, apply, delete, replace, patch
+	// +kubebuilder:validation:Enum=get;create;apply;delete;replace;patch
 	Action string `json:"action" protobuf:"bytes,1,opt,name=action"`
 
 	// MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"
 	// Must be one of: strategic, merge, json
+	// +kubebuilder:validation:Enum=strategic;merge;json
 	MergeStrategy string `json:"mergeStrategy,omitempty" protobuf:"bytes,2,opt,name=mergeStrategy"`
 
 	// Manifest contains the kubernetes manifest
@@ -3408,6 +3423,7 @@ type DAGTemplate struct {
 	// Tasks are a list of DAG tasks
 	// +patchStrategy=merge
 	// +patchMergeKey=name
+	// +kubebuilder:validation:MinItems=1
 	Tasks []DAGTask `json:"tasks" patchStrategy:"merge" patchMergeKey:"name" protobuf:"bytes,2,rep,name=tasks"`
 
 	// This flag is for DAG logic. The DAG logic has a built-in "fail fast" feature to stop scheduling new steps,
@@ -3420,8 +3436,14 @@ type DAGTemplate struct {
 }
 
 // DAGTask represents a node in the graph during DAG execution
+// +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
+// +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
 type DAGTask struct {
 	// Name is the name of the target
+	// +kubebuilder:validation:MaxLength=128
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 
 	// Name of template to execute
@@ -3817,10 +3839,12 @@ type Metrics struct {
 // Prometheus is a prometheus metric to be emitted
 type Prometheus struct {
 	// Name is the name of the metric
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
 	Name string `json:"name" protobuf:"bytes,1,opt,name=name"`
 	// Labels is a list of metric labels
 	Labels []*MetricLabel `json:"labels,omitempty" protobuf:"bytes,2,rep,name=labels"`
 	// Help is a string that describes the metric
+	// +kubebuilder:validation:MinLength=1
 	Help string `json:"help" protobuf:"bytes,3,opt,name=help"`
 	// When is a conditional statement that decides when to emit the metric
 	When string `json:"when,omitempty" protobuf:"bytes,4,opt,name=when"`
@@ -3911,14 +3935,17 @@ func (p *Prometheus) IsRealtime() bool {
 
 // MetricLabel is a single label for a prometheus metric
 type MetricLabel struct {
+	// +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
 	Key   string `json:"key" protobuf:"bytes,1,opt,name=key"`
 	Value string `json:"value" protobuf:"bytes,2,opt,name=value"`
 }
 
 // Gauge is a Gauge prometheus metric
+// +kubebuilder:validation:XValidation:rule="!has(self.realtime) || !self.realtime || !self.value.contains('resourcesDuration.')",message="'resourcesDuration.*' metrics cannot be used in real-time gauges"
 type Gauge struct {
 	// Value is the value to be used in the operation with the metric's current value. If no operation is set,
 	// value is the value of the metric
+	// +kubebuilder:validation:MinLength=1
 	Value string `json:"value" protobuf:"bytes,1,opt,name=value"`
 	// Realtime emits this metric in real time if applicable
 	Realtime *bool `json:"realtime" protobuf:"varint,2,opt,name=realtime"`
@@ -3939,6 +3966,7 @@ const (
 // Histogram is a Histogram prometheus metric
 type Histogram struct {
 	// Value is the value of the metric
+	// +kubebuilder:validation:MinLength=1
 	Value string `json:"value" protobuf:"bytes,3,opt,name=value"`
 	// Buckets is a list of bucket divisors for the histogram
 	Buckets []Amount `json:"buckets" protobuf:"bytes,4,rep,name=buckets"`
@@ -3955,6 +3983,7 @@ func (in *Histogram) GetBuckets() []float64 {
 // Counter is a Counter prometheus metric
 type Counter struct {
 	// Value is the value of the metric
+	// +kubebuilder:validation:MinLength=1
 	Value string `json:"value" protobuf:"bytes,1,opt,name=value"`
 }
 
