@@ -51,7 +51,6 @@ definitions:
         title: Affinity is a group of affinity scheduling rules.
         type: object
     Amount:
-        description: +kubebuilder:validation:Type=number
         title: Amount represent a numeric amount.
         type: object
     AnyString:
@@ -147,7 +146,6 @@ definitions:
             name:
                 description: |-
                     name of the artifact. must be unique within a template's inputs/outputs.
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             optional:
                 description: Make Artifacts optional, if Artifacts doesn't generate or exist
@@ -260,7 +258,6 @@ definitions:
             name:
                 description: |-
                     name of the artifact. must be unique within a template's inputs/outputs.
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             optional:
                 description: Make Artifacts optional, if Artifacts doesn't generate or exist
@@ -587,7 +584,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -614,7 +610,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -655,7 +650,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -707,7 +701,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -1174,7 +1167,6 @@ definitions:
             value:
                 description: |-
                     Value is the value of the metric
-                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     CreateS3BucketOptions:
@@ -1187,10 +1179,6 @@ definitions:
     DAGTask:
         description: |-
             DAGTask represents a node in the graph during DAG execution
-            +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
-            +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
-            +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
-            +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
         properties:
             arguments:
                 $ref: '#/definitions/Arguments'
@@ -1211,8 +1199,6 @@ definitions:
             name:
                 description: |-
                     Name is the name of the target
-                    +kubebuilder:validation:MaxLength=128
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
                 type: string
             onExit:
                 description: |-
@@ -1234,8 +1220,6 @@ definitions:
                     WithItems expands a task into multiple parallel tasks from the items in the list
                     Note: The structure of WithItems is free-form, so we need
                     "x-kubernetes-preserve-unknown-fields: true" in the validation schema.
-                    +kubebuilder:validation:Schemaless
-                    +kubebuilder:pruning:PreserveUnknownFields
                 items:
                     $ref: '#/definitions/Item'
                 type: array
@@ -1267,7 +1251,6 @@ definitions:
                     Tasks are a list of DAG tasks
                     +patchStrategy=merge
                     +patchMergeKey=name
-                    +kubebuilder:validation:MinItems=1
                 items:
                     $ref: '#/definitions/DAGTask'
                 type: array
@@ -1636,7 +1619,6 @@ definitions:
     Gauge:
         description: |-
             Gauge is a Gauge prometheus metric
-            +kubebuilder:validation:XValidation:rule="!has(self.realtime) || !self.realtime || !self.value.contains('resourcesDuration.')",message="'resourcesDuration.*' metrics cannot be used in real-time gauges"
         properties:
             operation:
                 $ref: '#/definitions/GaugeOperation'
@@ -1647,7 +1629,6 @@ definitions:
                 description: |-
                     Value is the value to be used in the operation with the metric's current value. If no operation is set,
                     value is the value of the metric
-                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     GaugeOperation:
@@ -1914,7 +1895,6 @@ definitions:
             value:
                 description: |-
                     Value is the value of the metric
-                    +kubebuilder:validation:MinLength=1
                 type: string
         type: object
     HostAlias:
@@ -2220,7 +2200,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
         title: |-
@@ -2309,7 +2288,6 @@ definitions:
         description: MetricLabel is a single label for a prometheus metric
         properties:
             key:
-                description: +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
                 type: string
             value:
                 type: string
@@ -2643,7 +2621,6 @@ definitions:
             name:
                 description: |-
                     Name is the parameter name
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$`
                 type: string
             value:
                 $ref: '#/definitions/AnyString'
@@ -3321,7 +3298,6 @@ definitions:
             help:
                 description: |-
                     Help is a string that describes the metric
-                    +kubebuilder:validation:MinLength=1
                 type: string
             histogram:
                 $ref: '#/definitions/Histogram'
@@ -3333,7 +3309,6 @@ definitions:
             name:
                 description: |-
                     Name is the name of the metric
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z_][a-zA-Z0-9_]*$`
                 type: string
             when:
                 description: When is a conditional statement that decides when to emit the metric
@@ -3601,13 +3576,11 @@ definitions:
     ResourceTemplate:
         description: |-
             ResourceTemplate is a template subtype to manipulate kubernetes resources
-            +kubebuilder:validation:XValidation:rule="(has(self.manifest) && !has(self.manifestFrom)) || (!has(self.manifest) && has(self.manifestFrom)) || (!has(self.manifest) && !has(self.manifestFrom))",message="only one of manifest or manifestFrom can be specified"
         properties:
             action:
                 description: |-
                     Action is the action to perform to the resource.
                     Must be one of: get, create, apply, delete, replace, patch
-                    +kubebuilder:validation:Enum=get;create;apply;delete;replace;patch
                 type: string
             failureCondition:
                 description: |-
@@ -3633,7 +3606,6 @@ definitions:
                 description: |-
                     MergeStrategy is the strategy used to merge a patch. It defaults to "strategic"
                     Must be one of: strategic, merge, json
-                    +kubebuilder:validation:Enum=strategic;merge;json
                 type: string
             setOwnerReference:
                 description: SetOwnerReference sets the reference to the workflow on the OwnerReference of generated resource.
@@ -4027,7 +3999,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -4054,7 +4025,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -4094,7 +4064,6 @@ definitions:
                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                     +optional
                     +default=""
-                    +kubebuilder:default=""
                     TODO: Drop `kubebuilder:default` when controller-gen doesn't need it https://github.com/kubernetes-sigs/kubebuilder/issues/3896.
                 type: string
             optional:
@@ -4238,7 +4207,6 @@ definitions:
     Sequence:
         description: |-
             Sequence expands a workflow step into numeric range
-            +kubebuilder:validation:XValidation:rule="!(has(self.count) && has(self.end))",message="only one of count or end can be defined"
         properties:
             count:
                 $ref: '#/definitions/IntOrString'
@@ -4406,7 +4374,6 @@ definitions:
     Template:
         description: |-
             Template is a reusable and composable unit of execution in a workflow
-            +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
         properties:
             activeDeadlineSeconds:
                 $ref: '#/definitions/IntOrString'
@@ -4471,8 +4438,6 @@ definitions:
             name:
                 description: |-
                     Name is the name of the template
-                    +kubebuilder:validation:MaxLength=128
-                    +kubebuilder:validation:Pattern=`^[a-zA-Z0-9][-a-zA-Z0-9]*$`
                 type: string
             nodeSelector:
                 additionalProperties:
@@ -4488,7 +4453,6 @@ definitions:
                     Parallelism limits the max total parallel pods that can execute at the same time within the
                     boundaries of this template invocation. If additional steps/dag templates are invoked, the
                     pods created by those templates will not be counted towards this total.
-                    +kubebuilder:validation:Minimum=1
                 format: int64
                 type: integer
             plugin:
