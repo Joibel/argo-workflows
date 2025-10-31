@@ -24235,6 +24235,7 @@ spec:
                           rule: '[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x,
                             x).size() <= 1'
                       type: array
+                    minItems: 1
                     type: array
                   suspend:
                     description: Suspend template subtype which can suspend a workflow
@@ -46299,6 +46300,7 @@ spec:
                             rule: '[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x,
                               x).size() <= 1'
                         type: array
+                      minItems: 1
                       type: array
                     suspend:
                       description: Suspend template subtype which can suspend a workflow

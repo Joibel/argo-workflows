@@ -20251,6 +20251,7 @@ spec:
                         required:
                         - steps
                         type: object
+                      minItems: 1
                       type: array
                     suspend:
                       description: Suspend template subtype which can suspend a workflow
