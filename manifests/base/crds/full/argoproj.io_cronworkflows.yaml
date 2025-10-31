@@ -58,6 +58,7 @@ spec:
                   run the Workflow in Cron format'
                 items:
                   type: string
+                minItems: 1
                 type: array
               startingDeadlineSeconds:
                 description: |-

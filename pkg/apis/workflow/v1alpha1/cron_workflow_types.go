@@ -65,6 +65,7 @@ type CronWorkflowSpec struct {
 	// v3.6 and after: StopStrategy defines if the CronWorkflow should stop scheduling based on a condition
 	StopStrategy *StopStrategy `json:"stopStrategy,omitempty" protobuf:"bytes,10,opt,name=stopStrategy"`
 	// v3.6 and after: Schedules is a list of schedules to run the Workflow in Cron format
+	// +kubebuilder:validation:MinItems=1
 	Schedules []string `json:"schedules,omitempty" protobuf:"bytes,11,opt,name=schedules"`
 	// v3.6 and after: When is an expression that determines if a run should be scheduled.
 	When string `json:"when,omitempty" protobuf:"bytes,12,opt,name=when"`
