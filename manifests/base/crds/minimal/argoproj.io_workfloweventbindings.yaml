@@ -1161,6 +1161,7 @@ spec:
                                   * It will unmarshall int64, int32, float64, float32, boolean, a plain string and represents it as string.
                                   * It will marshall back to string - marshalling is not symmetric.
                                 type: string
+                              minItems: 1
                               type: array
                             globalName:
                               description: |-

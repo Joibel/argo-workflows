@@ -983,6 +983,7 @@ type Parameter struct {
 	GlobalName string `json:"globalName,omitempty" protobuf:"bytes,5,opt,name=globalName"`
 
 	// Enum holds a list of string values to choose from, for the actual value of the parameter
+	// +kubebuilder:validation:MinItems=1
 	Enum []AnyString `json:"enum,omitempty" protobuf:"bytes,6,rep,name=enum"`
 
 	// Description is the parameter description
@@ -2192,6 +2193,7 @@ func (w *Workflow) GetOffloadNodeStatusVersion() string {
 	return w.Status.GetOffloadNodeStatusVersion()
 }
 
+// +kubebuilder:validation:Enum=Always;OnFailure;OnError;OnTransientError
 type RetryPolicy string
 
 const (
@@ -3955,6 +3957,7 @@ type Gauge struct {
 }
 
 // A GaugeOperation is the set of operations that can be used in a gauge metric.
+// +kubebuilder:validation:Enum=Set;Add;Sub
 type GaugeOperation string
 
 const (
