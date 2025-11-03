@@ -6066,7 +6066,7 @@ spec:
           value: admin
         - name: MINIO_SECRET_KEY
           value: password
-        image: quay.io/minio/minio:RELEASE.2022-11-17T23-20-09Z@sha256:b2a98df34c3e8d605a5e96f0bc1657dd440a5bd53d95465a7b342e736da9c6cf
+        image: cgr.dev/chainguard/minio:latest
         lifecycle:
           postStart:
             exec:
