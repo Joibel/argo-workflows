@@ -21,6 +21,7 @@ type ContainerSetTemplate struct {
 type ContainerSetRetryStrategy struct {
 	// Duration is the time between each retry, examples values are "300ms", "1s" or "5m".
 	// Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// +kubebuilder:validation:Pattern=`^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$`
 	Duration string `json:"duration,omitempty" protobuf:"bytes,1,opt,name=duration"`
 	// Retries is the maximum number of retry attempts for each container. It does not include the
 	// first, original attempt; the maximum number of total attempts will be `retries + 1`.
