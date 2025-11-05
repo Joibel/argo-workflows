@@ -26188,6 +26188,9 @@ spec:
                     has(self.resource), has(self.suspend), has(self.containerSet),
                     has(self.data), has(self.http), has(self.plugin)].filter(x, x).size()
                     <= 1'
+                - message: timeout cannot be applied to steps or dag templates
+                  rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
+                    || has(self.dag)))'
               templates:
                 description: Templates is a list of workflow templates used in a workflow
                 items:
@@ -48266,6 +48269,9 @@ spec:
                       has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet),
                       has(self.data), has(self.http), has(self.plugin)].filter(x,
                       x).size() <= 1'
+                  - message: timeout cannot be applied to steps or dag templates
+                    rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
+                      || has(self.dag)))'
                 type: array
               tolerations:
                 description: Tolerations to apply to workflow pods.

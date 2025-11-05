@@ -614,6 +614,7 @@ func (wfs *WorkflowSpec) HasPodSpecPatch() bool {
 
 // Template is a reusable and composable unit of execution in a workflow
 // +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
+// +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != '' && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
 type Template struct {
 	// Name is the name of the template
 	// +kubebuilder:validation:MaxLength=128

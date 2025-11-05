@@ -22207,6 +22207,9 @@ spec:
                       has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet),
                       has(self.data), has(self.http), has(self.plugin)].filter(x,
                       x).size() <= 1'
+                  - message: timeout cannot be applied to steps or dag templates
+                    rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
+                      || has(self.dag)))'
                 type: object
             type: object
           status:
