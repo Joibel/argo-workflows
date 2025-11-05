@@ -1691,6 +1691,8 @@ spec:
                             mode bits to use on this file, must be a value between 0 and 0777
                             set when loading input artifacts.
                           format: int32
+                          maximum: 511
+                          minimum: 0
                           type: integer
                         name:
                           description: name of the artifact. must be unique within
@@ -3008,6 +3010,8 @@ spec:
                                   mode bits to use on this file, must be a value between 0 and 0777
                                   set when loading input artifacts.
                                 format: int32
+                                maximum: 511
+                                minimum: 0
                                 type: integer
                               name:
                                 description: name of the artifact. must be unique
@@ -9931,6 +9935,8 @@ spec:
                                           mode bits to use on this file, must be a value between 0 and 0777
                                           set when loading input artifacts.
                                         format: int32
+                                        maximum: 511
+                                        minimum: 0
                                         type: integer
                                       name:
                                         description: name of the artifact. must be
@@ -11271,6 +11277,8 @@ spec:
                                                 mode bits to use on this file, must be a value between 0 and 0777
                                                 set when loading input artifacts.
                                               format: int32
+                                              maximum: 511
+                                              minimum: 0
                                               type: integer
                                             name:
                                               description: name of the artifact. must
@@ -12667,6 +12675,8 @@ spec:
                                   mode bits to use on this file, must be a value between 0 and 0777
                                   set when loading input artifacts.
                                 format: int32
+                                maximum: 511
+                                minimum: 0
                                 type: integer
                               name:
                                 description: name of the artifact. must be unique
@@ -15328,6 +15338,8 @@ spec:
                                 mode bits to use on this file, must be a value between 0 and 0777
                                 set when loading input artifacts.
                               format: int32
+                              maximum: 511
+                              minimum: 0
                               type: integer
                             name:
                               description: name of the artifact. must be unique within
@@ -16695,6 +16707,8 @@ spec:
                                 mode bits to use on this file, must be a value between 0 and 0777
                                 set when loading input artifacts.
                               format: int32
+                              maximum: 511
+                              minimum: 0
                               type: integer
                             name:
                               description: name of the artifact. must be unique within
@@ -17950,6 +17964,8 @@ spec:
                                   mode bits to use on this file, must be a value between 0 and 0777
                                   set when loading input artifacts.
                                 format: int32
+                                maximum: 511
+                                minimum: 0
                                 type: integer
                               name:
                                 description: name of the artifact. must be unique
@@ -22311,6 +22327,8 @@ spec:
                                         mode bits to use on this file, must be a value between 0 and 0777
                                         set when loading input artifacts.
                                       format: int32
+                                      maximum: 511
+                                      minimum: 0
                                       type: integer
                                     name:
                                       description: name of the artifact. must be unique
@@ -23610,6 +23628,8 @@ spec:
                                               mode bits to use on this file, must be a value between 0 and 0777
                                               set when loading input artifacts.
                                             format: int32
+                                            maximum: 511
+                                            minimum: 0
                                             type: integer
                                           name:
                                             description: name of the artifact. must
@@ -26191,6 +26211,9 @@ spec:
                 - message: timeout cannot be applied to steps or dag templates
                   rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
                     || has(self.dag)))'
+                - message: activeDeadlineSeconds is only valid for leaf templates
+                  rule: '!(has(self.activeDeadlineSeconds) && (has(self.steps) ||
+                    has(self.dag)))'
               templates:
                 description: Templates is a list of workflow templates used in a workflow
                 items:
@@ -31881,6 +31904,8 @@ spec:
                                             mode bits to use on this file, must be a value between 0 and 0777
                                             set when loading input artifacts.
                                           format: int32
+                                          maximum: 511
+                                          minimum: 0
                                           type: integer
                                         name:
                                           description: name of the artifact. must
@@ -33244,6 +33269,8 @@ spec:
                                                   mode bits to use on this file, must be a value between 0 and 0777
                                                   set when loading input artifacts.
                                                 format: int32
+                                                maximum: 511
+                                                minimum: 0
                                                 type: integer
                                               name:
                                                 description: name of the artifact.
@@ -34657,6 +34684,8 @@ spec:
                                     mode bits to use on this file, must be a value between 0 and 0777
                                     set when loading input artifacts.
                                   format: int32
+                                  maximum: 511
+                                  minimum: 0
                                   type: integer
                                 name:
                                   description: name of the artifact. must be unique
@@ -37328,6 +37357,8 @@ spec:
                                   mode bits to use on this file, must be a value between 0 and 0777
                                   set when loading input artifacts.
                                 format: int32
+                                maximum: 511
+                                minimum: 0
                                 type: integer
                               name:
                                 description: name of the artifact. must be unique
@@ -38705,6 +38736,8 @@ spec:
                                   mode bits to use on this file, must be a value between 0 and 0777
                                   set when loading input artifacts.
                                 format: int32
+                                maximum: 511
+                                minimum: 0
                                 type: integer
                               name:
                                 description: name of the artifact. must be unique
@@ -39972,6 +40005,8 @@ spec:
                                     mode bits to use on this file, must be a value between 0 and 0777
                                     set when loading input artifacts.
                                   format: int32
+                                  maximum: 511
+                                  minimum: 0
                                   type: integer
                                 name:
                                   description: name of the artifact. must be unique
@@ -44342,6 +44377,8 @@ spec:
                                           mode bits to use on this file, must be a value between 0 and 0777
                                           set when loading input artifacts.
                                         format: int32
+                                        maximum: 511
+                                        minimum: 0
                                         type: integer
                                       name:
                                         description: name of the artifact. must be
@@ -45672,6 +45709,8 @@ spec:
                                                 mode bits to use on this file, must be a value between 0 and 0777
                                                 set when loading input artifacts.
                                               format: int32
+                                              maximum: 511
+                                              minimum: 0
                                               type: integer
                                             name:
                                               description: name of the artifact. must
@@ -48272,6 +48311,9 @@ spec:
                   - message: timeout cannot be applied to steps or dag templates
                     rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
                       || has(self.dag)))'
+                  - message: activeDeadlineSeconds is only valid for leaf templates
+                    rule: '!(has(self.activeDeadlineSeconds) && (has(self.steps) ||
+                      has(self.dag)))'
                 type: array
               tolerations:
                 description: Tolerations to apply to workflow pods.

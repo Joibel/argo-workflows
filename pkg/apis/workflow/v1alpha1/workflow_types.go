@@ -615,6 +615,7 @@ func (wfs *WorkflowSpec) HasPodSpecPatch() bool {
 // Template is a reusable and composable unit of execution in a workflow
 // +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
 // +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != '' && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
+// +kubebuilder:validation:XValidation:rule="!(has(self.activeDeadlineSeconds) && (has(self.steps) || has(self.dag)))",message="activeDeadlineSeconds is only valid for leaf templates"
 type Template struct {
 	// Name is the name of the template
 	// +kubebuilder:validation:MaxLength=128
@@ -1052,6 +1053,8 @@ type Artifact struct {
 
 	// mode bits to use on this file, must be a value between 0 and 0777
 	// set when loading input artifacts.
+	// +kubebuilder:validation:Minimum=0
+	// +kubebuilder:validation:Maximum=511
 	Mode *int32 `json:"mode,omitempty" protobuf:"varint,3,opt,name=mode"`
 
 	// From allows an artifact to reference an artifact from a previous step

@@ -788,6 +788,8 @@ spec:
                                 mode bits to use on this file, must be a value between 0 and 0777
                                 set when loading input artifacts.
                               format: int32
+                              maximum: 511
+                              minimum: 0
                               type: integer
                             name:
                               description: name of the artifact. must be unique within
