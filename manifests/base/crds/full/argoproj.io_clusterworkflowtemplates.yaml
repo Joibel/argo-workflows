@@ -11933,6 +11933,10 @@ spec:
                               'depends' or 'dependencies'
                             rule: '!has(self.depends) && !has(self.dependencies) ||
                               !self.name.matches(''^[0-9]'')'
+                          - message: exactly one of template, inline, or templateRef
+                              must be specified
+                            rule: '[has(self.template) && self.template != '''', has(self.inline),
+                              has(self.templateRef)].filter(x, x).size() == 1'
                         minItems: 1
                         type: array
                     required:
@@ -24264,6 +24268,10 @@ spec:
                             can be specified
                           rule: '[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x,
                             x).size() <= 1'
+                        - message: exactly one of template, inline, or templateRef
+                            must be specified
+                          rule: '[has(self.template) && self.template != '''', has(self.inline),
+                            has(self.templateRef)].filter(x, x).size() == 1'
                       type: array
                     minItems: 1
                     type: array
@@ -33936,6 +33944,11 @@ spec:
                                 'depends' or 'dependencies'
                               rule: '!has(self.depends) && !has(self.dependencies)
                                 || !self.name.matches(''^[0-9]'')'
+                            - message: exactly one of template, inline, or templateRef
+                                must be specified
+                              rule: '[has(self.template) && self.template != '''',
+                                has(self.inline), has(self.templateRef)].filter(x,
+                                x).size() == 1'
                           minItems: 1
                           type: array
                       required:
@@ -46357,6 +46370,10 @@ spec:
                               can be specified
                             rule: '[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x,
                               x).size() <= 1'
+                          - message: exactly one of template, inline, or templateRef
+                              must be specified
+                            rule: '[has(self.template) && self.template != '''', has(self.inline),
+                              has(self.templateRef)].filter(x, x).size() == 1'
                         type: array
                       minItems: 1
                       type: array

@@ -1616,6 +1616,7 @@ func (out *Outputs) GetArtifacts() Artifacts {
 
 // WorkflowStep is a reference to a template to execute in a series of step
 // +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != '', has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 type WorkflowStep struct {
 	// Name of the step
 	// +kubebuilder:validation:MaxLength=128
@@ -3452,6 +3453,7 @@ type DAGTemplate struct {
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != '', has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 type DAGTask struct {
 	// Name is the name of the target
 	// +kubebuilder:validation:MaxLength=128
