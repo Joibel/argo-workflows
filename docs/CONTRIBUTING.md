@@ -157,8 +157,3 @@ If you do not have access to add labels, ask a maintainer to add them for you.
 If you add labels before the PR is merged, the cherry-pick bot will open the backport PRs when your PR is merged.
 
 Adding a label after the PR is merged will also cause the bot to open the backport PR.
-
-## Sustainability Effort
-
-Argo Workflows is seeking more [Reviewers and Approvers](https://github.com/argoproj/argoproj/blob/main/community/membership.md) to help keep it viable.
-Please see [Sustainability Effort](https://github.com/argoproj/argo-workflows/blob/main/community/sustainability_effort.md) for more information.
