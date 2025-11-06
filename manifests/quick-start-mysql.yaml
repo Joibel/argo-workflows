@@ -1836,6 +1836,8 @@ spec:
                               mode bits to use on this file, must be a value between 0 and 0777
                               set when loading input artifacts.
                             format: int32
+                            maximum: 511
+                            minimum: 0
                             type: integer
                           name:
                             description: name of the artifact. must be unique within
@@ -3019,6 +3021,8 @@ spec:
                                 mode bits to use on this file, must be a value between 0 and 0777
                                 set when loading input artifacts.
                               format: int32
+                              maximum: 511
+                              minimum: 0
                               type: integer
                             name:
                               description: name of the artifact. must be unique within
@@ -3392,6 +3396,7 @@ spec:
                                   * It will unmarshall int64, int32, float64, float32, boolean, a plain string and represents it as string.
                                   * It will marshall back to string - marshalling is not symmetric.
                                 type: string
+                              minItems: 1
                               type: array
                             globalName:
                               description: |-
@@ -4353,6 +4358,8 @@ spec:
                         mode bits to use on this file, must be a value between 0 and 0777
                         set when loading input artifacts.
                       format: int32
+                      maximum: 511
+                      minimum: 0
                       type: integer
                     name:
                       description: name of the artifact. must be unique within a template's
@@ -4717,6 +4724,7 @@ spec:
                           * It will unmarshall int64, int32, float64, float32, boolean, a plain string and represents it as string.
                           * It will marshall back to string - marshalling is not symmetric.
                         type: string
+                      minItems: 1
                       type: array
                     globalName:
                       description: |-

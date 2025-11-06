@@ -3783,7 +3783,6 @@ spec:
                   deleteDelayDuration:
                     description: DeleteDelayDuration specifies the duration before
                       pods in the GC queue get deleted.
-                    pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                     type: string
                   labelSelector:
                     description: LabelSelector is the label selector to check if the
@@ -3892,12 +3891,10 @@ spec:
                           Cap is a limit on revised values of the duration parameter. If a
                           multiplication by the factor parameter would make the duration
                           exceed the cap then the duration is set to the cap
-                        pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                         type: string
                       duration:
                         description: Duration is the amount to back off. Default unit
                           is seconds, but could also be a duration (e.g. "2m", "1h")
-                        pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                         type: string
                       factor:
                         anyOf:
@@ -3912,7 +3909,6 @@ spec:
                           It is important to note that if the workflow template includes activeDeadlineSeconds, the pod's deadline is initially set with activeDeadlineSeconds.
                           However, when the workflow fails, the pod's deadline is then overridden by maxDuration.
                           This ensures that the workflow does not exceed the specified maximum duration when retries are involved.
-                        pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                         type: string
                     type: object
                   expression:
@@ -9053,7 +9049,6 @@ spec:
                             description: |-
                               Duration is the time between each retry, examples values are "300ms", "1s" or "5m".
                               Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-                            pattern: ^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$
                             type: string
                           retries:
                             anyOf:
@@ -11935,7 +11930,7 @@ spec:
                               !self.name.matches(''^[0-9]'')'
                           - message: exactly one of template, inline, or templateRef
                               must be specified
-                            rule: '[has(self.template) && self.template != '''', has(self.inline),
+                            rule: '[has(self.template) && self.template != ”, has(self.inline),
                               has(self.templateRef)].filter(x, x).size() == 1'
                         minItems: 1
                         type: array
@@ -15814,9 +15809,6 @@ spec:
                           configMap:
                             description: ConfigMap sets a ConfigMap-based cache
                             properties:
-                              key:
-                                description: The key to select.
-                                type: string
                               name:
                                 default: ""
                                 description: |-
@@ -15826,12 +15818,6 @@ spec:
                                   almost certainly wrong.
                                   More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                 type: string
-                              optional:
-                                description: Specify whether the ConfigMap or its
-                                  key must be defined
-                                type: boolean
-                            required:
-                            - key
                             type: object
                             x-kubernetes-map-type: atomic
                         required:
@@ -18375,13 +18361,11 @@ spec:
                               Cap is a limit on revised values of the duration parameter. If a
                               multiplication by the factor parameter would make the duration
                               exceed the cap then the duration is set to the cap
-                            pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                             type: string
                           duration:
                             description: Duration is the amount to back off. Default
                               unit is seconds, but could also be a duration (e.g.
                               "2m", "1h")
-                            pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                             type: string
                           factor:
                             anyOf:
@@ -18396,7 +18380,6 @@ spec:
                               It is important to note that if the workflow template includes activeDeadlineSeconds, the pod's deadline is initially set with activeDeadlineSeconds.
                               However, when the workflow fails, the pod's deadline is then overridden by maxDuration.
                               This ensures that the workflow does not exceed the specified maximum duration when retries are involved.
-                            pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                             type: string
                         type: object
                       expression:
@@ -24270,7 +24253,7 @@ spec:
                             x).size() <= 1'
                         - message: exactly one of template, inline, or templateRef
                             must be specified
-                          rule: '[has(self.template) && self.template != '''', has(self.inline),
+                          rule: '[has(self.template) && self.template != ”, has(self.inline),
                             has(self.templateRef)].filter(x, x).size() == 1'
                       type: array
                     minItems: 1
@@ -24283,7 +24266,6 @@ spec:
                         description: |-
                           Duration is the seconds to wait before automatically resuming a template. Must be a string. Default unit is seconds.
                           Could also be a Duration, e.g.: "2m", "6h"
-                        pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                         type: string
                     type: object
                   synchronization:
@@ -24359,7 +24341,6 @@ spec:
                     description: |-
                       Timeout allows to set the total node execution timeout duration counting from the node's start time.
                       This duration also includes time in which the node spends in Pending state. This duration may not be applied to Step or DAG templates.
-                    pattern: ^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$
                     type: string
                   tolerations:
                     description: Tolerations to apply to workflow pods.
@@ -26219,7 +26200,7 @@ spec:
                     has(self.data), has(self.http), has(self.plugin)].filter(x, x).size()
                     <= 1'
                 - message: timeout cannot be applied to steps or dag templates
-                  rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
+                  rule: '!(has(self.timeout) && self.timeout != ” && (has(self.steps)
                     || has(self.dag)))'
                 - message: activeDeadlineSeconds is only valid for leaf templates
                   rule: '!(has(self.activeDeadlineSeconds) && (has(self.steps) ||
@@ -31027,7 +31008,6 @@ spec:
                               description: |-
                                 Duration is the time between each retry, examples values are "300ms", "1s" or "5m".
                                 Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
-                              pattern: ^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$
                               type: string
                             retries:
                               anyOf:
@@ -33946,9 +33926,8 @@ spec:
                                 || !self.name.matches(''^[0-9]'')'
                             - message: exactly one of template, inline, or templateRef
                                 must be specified
-                              rule: '[has(self.template) && self.template != '''',
-                                has(self.inline), has(self.templateRef)].filter(x,
-                                x).size() == 1'
+                              rule: '[has(self.template) && self.template != ”, has(self.inline),
+                                has(self.templateRef)].filter(x, x).size() == 1'
                           minItems: 1
                           type: array
                       required:
@@ -37847,9 +37826,6 @@ spec:
                             configMap:
                               description: ConfigMap sets a ConfigMap-based cache
                               properties:
-                                key:
-                                  description: The key to select.
-                                  type: string
                                 name:
                                   default: ""
                                   description: |-
@@ -37859,12 +37835,6 @@ spec:
                                     almost certainly wrong.
                                     More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                                   type: string
-                                optional:
-                                  description: Specify whether the ConfigMap or its
-                                    key must be defined
-                                  type: boolean
-                              required:
-                              - key
                               type: object
                               x-kubernetes-map-type: atomic
                           required:
@@ -40429,13 +40399,11 @@ spec:
                                 Cap is a limit on revised values of the duration parameter. If a
                                 multiplication by the factor parameter would make the duration
                                 exceed the cap then the duration is set to the cap
-                              pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                               type: string
                             duration:
                               description: Duration is the amount to back off. Default
                                 unit is seconds, but could also be a duration (e.g.
                                 "2m", "1h")
-                              pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                               type: string
                             factor:
                               anyOf:
@@ -40450,7 +40418,6 @@ spec:
                                 It is important to note that if the workflow template includes activeDeadlineSeconds, the pod's deadline is initially set with activeDeadlineSeconds.
                                 However, when the workflow fails, the pod's deadline is then overridden by maxDuration.
                                 This ensures that the workflow does not exceed the specified maximum duration when retries are involved.
-                              pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                               type: string
                           type: object
                         expression:
@@ -46372,7 +46339,7 @@ spec:
                               x).size() <= 1'
                           - message: exactly one of template, inline, or templateRef
                               must be specified
-                            rule: '[has(self.template) && self.template != '''', has(self.inline),
+                            rule: '[has(self.template) && self.template != ”, has(self.inline),
                               has(self.templateRef)].filter(x, x).size() == 1'
                         type: array
                       minItems: 1
@@ -46385,7 +46352,6 @@ spec:
                           description: |-
                             Duration is the seconds to wait before automatically resuming a template. Must be a string. Default unit is seconds.
                             Could also be a Duration, e.g.: "2m", "6h"
-                          pattern: ^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$
                           type: string
                       type: object
                     synchronization:
@@ -46461,7 +46427,6 @@ spec:
                       description: |-
                         Timeout allows to set the total node execution timeout duration counting from the node's start time.
                         This duration also includes time in which the node spends in Pending state. This duration may not be applied to Step or DAG templates.
-                      pattern: ^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$
                       type: string
                     tolerations:
                       description: Tolerations to apply to workflow pods.
@@ -48328,7 +48293,7 @@ spec:
                       has(self.data), has(self.http), has(self.plugin)].filter(x,
                       x).size() <= 1'
                   - message: timeout cannot be applied to steps or dag templates
-                    rule: '!(has(self.timeout) && self.timeout != '''' && (has(self.steps)
+                    rule: '!(has(self.timeout) && self.timeout != ” && (has(self.steps)
                       || has(self.dag)))'
                   - message: activeDeadlineSeconds is only valid for leaf templates
                     rule: '!(has(self.activeDeadlineSeconds) && (has(self.steps) ||

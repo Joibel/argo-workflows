@@ -67,6 +67,8 @@ message Artifact {
 
   // mode bits to use on this file, must be a value between 0 and 0777
   // set when loading input artifacts.
+  // +kubebuilder:validation:Minimum=0
+  // +kubebuilder:validation:Maximum=511
   optional int32 mode = 3;
 
   // From allows an artifact to reference an artifact from a previous step
@@ -359,7 +361,7 @@ message BasicAuth {
 // Cache is the configuration for the type of cache to be used
 message Cache {
   // ConfigMap sets a ConfigMap-based cache
-  optional k8s.io.api.core.v1.ConfigMapKeySelector configMap = 1;
+  optional k8s.io.api.core.v1.LocalObjectReference configMap = 1;
 }
 
 // ClientCertAuth holds necessary information for client authentication via certificates
@@ -518,6 +520,8 @@ message CronWorkflowSpec {
   optional StopStrategy stopStrategy = 10;
 
   // v3.6 and after: Schedules is a list of schedules to run the Workflow in Cron format
+  // +kubebuilder:validation:MinItems=1
+  // +kubebuilder:validation:items:Pattern=`^(@(yearly|annually|monthly|weekly|daily|midnight|hourly)|@every\s+([0-9]+(ns|us|µs|ms|s|m|h))+|([0-9*,/-]+\s+){4}[0-9*,/-]+)$`
   repeated string schedules = 11;
 
   // v3.6 and after: When is an expression that determines if a run should be scheduled.
@@ -556,6 +560,7 @@ message CronWorkflowStatus {
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 message DAGTask {
   // Name is the name of the target
   // +kubebuilder:validation:MaxLength=128
@@ -1301,6 +1306,7 @@ message Parameter {
   optional string globalName = 5;
 
   // Enum holds a list of string values to choose from, for the actual value of the parameter
+  // +kubebuilder:validation:MinItems=1
   repeated string enum = 6;
 
   // Description is the parameter description
@@ -1687,6 +1693,8 @@ message TarStrategy {
 
 // Template is a reusable and composable unit of execution in a workflow
 // +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
+// +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != ” && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
+// +kubebuilder:validation:XValidation:rule="!(has(self.activeDeadlineSeconds) && (has(self.steps) || has(self.dag)))",message="activeDeadlineSeconds is only valid for leaf templates"
 message Template {
   // Name is the name of the template
   // +kubebuilder:validation:MaxLength=128
@@ -1714,6 +1722,7 @@ message Template {
   optional bool daemon = 10;
 
   // Steps define a series of sequential/parallel workflow steps
+  // +kubebuilder:validation:MinItems=1
   repeated ParallelSteps steps = 11;
 
   // Container is the main container image to run in the pod
@@ -2254,6 +2263,7 @@ message WorkflowStatus {
 
 // WorkflowStep is a reference to a template to execute in a series of step
 // +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 message WorkflowStep {
   // Name of the step
   // +kubebuilder:validation:MaxLength=128

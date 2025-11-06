@@ -229,7 +229,7 @@ It will marshall back to string - marshalling is not symmetric.
 | globalName | string| `string` |  | | GlobalName exports an output artifact to the global scope, making it available as</br>'{{workflow.outputs.artifacts.XXXX}} and in workflow.status.outputs.artifacts |  |
 | hdfs | [HDFSArtifact](#h-d-f-s-artifact)| `HDFSArtifact` |  | |  |  |
 | http | [HTTPArtifact](#http-artifact)| `HTTPArtifact` |  | |  |  |
-| mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts. |  |
+| mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts.</br>+kubebuilder:validation:Minimum=0</br>+kubebuilder:validation:Maximum=511 |  |
 | name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs.</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | optional | boolean| `bool` |  | | Make Artifacts optional, if Artifacts doesn't generate or exist |  |
 | oss | [OSSArtifact](#o-s-s-artifact)| `OSSArtifact` |  | |  |  |
@@ -330,7 +330,7 @@ of a single workflow step, which the executor will use as a default location to 
 | globalName | string| `string` |  | | GlobalName exports an output artifact to the global scope, making it available as</br>'{{workflow.outputs.artifacts.XXXX}} and in workflow.status.outputs.artifacts |  |
 | hdfs | [HDFSArtifact](#h-d-f-s-artifact)| `HDFSArtifact` |  | |  |  |
 | http | [HTTPArtifact](#http-artifact)| `HTTPArtifact` |  | |  |  |
-| mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts. |  |
+| mode | int32 (formatted integer)| `int32` |  | | mode bits to use on this file, must be a value between 0 and 0777</br>set when loading input artifacts.</br>+kubebuilder:validation:Minimum=0</br>+kubebuilder:validation:Maximum=511 |  |
 | name | string| `string` |  | | name of the artifact. must be unique within a template's inputs/outputs.</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | optional | boolean| `bool` |  | | Make Artifacts optional, if Artifacts doesn't generate or exist |  |
 | oss | [OSSArtifact](#o-s-s-artifact)| `OSSArtifact` |  | |  |  |
@@ -547,7 +547,7 @@ of a single workflow step, which the executor will use as a default location to 
 
 | Name | Type | Go type | Required | Default | Description | Example |
 |------|------|---------|:--------:| ------- |-------------|---------|
-| configMap | [ConfigMapKeySelector](#config-map-key-selector)| `ConfigMapKeySelector` |  | |  |  |
+| configMap | [LocalObjectReference](#local-object-reference)| `LocalObjectReference` |  | |  |  |
 
 
 
@@ -984,6 +984,7 @@ ConfigMap volumes support ownership management and SELinux relabeling.
 +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
 +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
 +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
++kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
   
 
 
@@ -1459,11 +1460,14 @@ PDs support ownership management and SELinux relabeling.
 ### <span id="gauge-operation"></span> GaugeOperation
 
 
+> +kubebuilder:validation:Enum=Set;Add;Sub
   
+
+
 
 | Name | Type | Go type | Default | Description | Example |
 |------|------|---------| ------- |-------------|---------|
-| GaugeOperation | string| string | |  |  |
+| GaugeOperation | string| string | | +kubebuilder:validation:Enum=Set;Add;Sub |  |
 
 
 
@@ -2563,7 +2567,7 @@ be cluster-scoped, so there is no namespace field.
 |------|------|---------|:--------:| ------- |-------------|---------|
 | default | [AnyString](#any-string)| `AnyString` |  | |  |  |
 | description | [AnyString](#any-string)| `AnyString` |  | |  |  |
-| enum | [][AnyString](#any-string)| `[]AnyString` |  | | Enum holds a list of string values to choose from, for the actual value of the parameter |  |
+| enum | [][AnyString](#any-string)| `[]AnyString` |  | | Enum holds a list of string values to choose from, for the actual value of the parameter</br>+kubebuilder:validation:MinItems=1 |  |
 | globalName | string| `string` |  | | GlobalName exports an output parameter to the global scope, making it available as</br>'{{workflow.outputs.parameters.XXXX}} and in workflow.status.outputs.parameters |  |
 | name | string| `string` |  | | Name is the parameter name</br>+kubebuilder:validation:Pattern=`^[a-zA-Z0-9_][-a-zA-Z0-9_]*$` |  |
 | value | [AnyString](#any-string)| `AnyString` |  | |  |  |
@@ -3296,11 +3300,14 @@ cause implementors to also use a fixed point implementation.
 ### <span id="retry-policy"></span> RetryPolicy
 
 
+> +kubebuilder:validation:Enum=Always;OnFailure;OnError;OnTransientError
   
+
+
 
 | Name | Type | Go type | Default | Description | Example |
 |------|------|---------| ------- |-------------|---------|
-| RetryPolicy | string| string | |  |  |
+| RetryPolicy | string| string | | +kubebuilder:validation:Enum=Always;OnFailure;OnError;OnTransientError |  |
 
 
 
@@ -3892,6 +3899,8 @@ of the first container processes are calculated.
 
 > Template is a reusable and composable unit of execution in a workflow
 +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
++kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != ” && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
++kubebuilder:validation:XValidation:rule="!(has(self.activeDeadlineSeconds) && (has(self.steps) || has(self.dag)))",message="activeDeadlineSeconds is only valid for leaf templates"
   
 
 
@@ -3935,7 +3944,7 @@ of the first container processes are calculated.
 | securityContext | [PodSecurityContext](#pod-security-context)| `PodSecurityContext` |  | |  |  |
 | serviceAccountName | string| `string` |  | | ServiceAccountName to apply to workflow pods |  |
 | sidecars | [][UserContainer](#user-container)| `[]*UserContainer` |  | | Sidecars is a list of containers which run alongside the main container</br>Sidecars are automatically killed when the main container completes</br>+patchStrategy=merge</br>+patchMergeKey=name |  |
-| steps | [][ParallelSteps](#parallel-steps)| `[]ParallelSteps` |  | | Steps define a series of sequential/parallel workflow steps |  |
+| steps | [][ParallelSteps](#parallel-steps)| `[]ParallelSteps` |  | | Steps define a series of sequential/parallel workflow steps</br>+kubebuilder:validation:MinItems=1 |  |
 | suspend | [SuspendTemplate](#suspend-template)| `SuspendTemplate` |  | |  |  |
 | synchronization | [Synchronization](#synchronization)| `Synchronization` |  | |  |  |
 | timeout | string| `string` |  | | Timeout allows to set the total node execution timeout duration counting from the node's start time.</br>This duration also includes time in which the node spends in Pending state. This duration may not be applied to Step or DAG templates. |  |

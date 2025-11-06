@@ -142,6 +142,8 @@ definitions:
                 description: |-
                     mode bits to use on this file, must be a value between 0 and 0777
                     set when loading input artifacts.
+                    +kubebuilder:validation:Minimum=0
+                    +kubebuilder:validation:Maximum=511
                 format: int32
                 type: integer
             name:
@@ -255,6 +257,8 @@ definitions:
                 description: |-
                     mode bits to use on this file, must be a value between 0 and 0777
                     set when loading input artifacts.
+                    +kubebuilder:validation:Minimum=0
+                    +kubebuilder:validation:Maximum=511
                 format: int32
                 type: integer
             name:
@@ -436,7 +440,7 @@ definitions:
         description: Cache is the configuration for the type of cache to be used
         properties:
             configMap:
-                $ref: '#/definitions/ConfigMapKeySelector'
+                $ref: '#/definitions/LocalObjectReference'
         type: object
     Capabilities:
         properties:
@@ -1191,6 +1195,7 @@ definitions:
             +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
             +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
             +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
+            +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
         properties:
             arguments:
                 $ref: '#/definitions/Arguments'
@@ -1651,6 +1656,7 @@ definitions:
                 type: string
         type: object
     GaugeOperation:
+        description: +kubebuilder:validation:Enum=Set;Add;Sub
         title: A GaugeOperation is the set of operations that can be used in a gauge metric.
         type: string
     GitArtifact:
@@ -2631,7 +2637,9 @@ definitions:
             description:
                 $ref: '#/definitions/AnyString'
             enum:
-                description: Enum holds a list of string values to choose from, for the actual value of the parameter
+                description: |-
+                    Enum holds a list of string values to choose from, for the actual value of the parameter
+                    +kubebuilder:validation:MinItems=1
                 items:
                     $ref: '#/definitions/AnyString'
                 type: array
@@ -3655,6 +3663,7 @@ definitions:
         title: RetryNodeAntiAffinity is a placeholder for future expansion, only empty nodeAntiAffinity is allowed.
         type: object
     RetryPolicy:
+        description: +kubebuilder:validation:Enum=Always;OnFailure;OnError;OnTransientError
         type: string
     RetryStrategy:
         description: RetryStrategy provides controls on how to retry a workflow step
@@ -4407,6 +4416,8 @@ definitions:
         description: |-
             Template is a reusable and composable unit of execution in a workflow
             +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
+            +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != ” && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
+            +kubebuilder:validation:XValidation:rule="!(has(self.activeDeadlineSeconds) && (has(self.steps) || has(self.dag)))",message="activeDeadlineSeconds is only valid for leaf templates"
         properties:
             activeDeadlineSeconds:
                 $ref: '#/definitions/IntOrString'
@@ -4529,7 +4540,9 @@ definitions:
                     $ref: '#/definitions/UserContainer'
                 type: array
             steps:
-                description: Steps define a series of sequential/parallel workflow steps
+                description: |-
+                    Steps define a series of sequential/parallel workflow steps
+                    +kubebuilder:validation:MinItems=1
                 items:
                     $ref: '#/definitions/ParallelSteps'
                 type: array

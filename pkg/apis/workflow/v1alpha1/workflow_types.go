@@ -614,7 +614,7 @@ func (wfs *WorkflowSpec) HasPodSpecPatch() bool {
 
 // Template is a reusable and composable unit of execution in a workflow
 // +kubebuilder:validation:XValidation:rule="[has(self.container), has(self.script), has(self.dag), has(self.steps), has(self.resource), has(self.suspend), has(self.containerSet), has(self.data), has(self.http), has(self.plugin)].filter(x, x).size() <= 1",message="template must have at most one template type"
-// +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != '' && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
+// +kubebuilder:validation:XValidation:rule="!(has(self.timeout) && self.timeout != ” && (has(self.steps) || has(self.dag)))",message="timeout cannot be applied to steps or dag templates"
 // +kubebuilder:validation:XValidation:rule="!(has(self.activeDeadlineSeconds) && (has(self.steps) || has(self.dag)))",message="activeDeadlineSeconds is only valid for leaf templates"
 type Template struct {
 	// Name is the name of the template
@@ -765,7 +765,6 @@ type Template struct {
 
 	// Timeout allows to set the total node execution timeout duration counting from the node's start time.
 	// This duration also includes time in which the node spends in Pending state. This duration may not be applied to Step or DAG templates.
-	// +kubebuilder:validation:Pattern=`^[0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*$`
 	Timeout string `json:"timeout,omitempty" protobuf:"bytes,38,opt,name=timeout"`
 
 	// Annotations is a list of annotations to add to the template at runtime
@@ -1145,7 +1144,6 @@ type PodGC struct {
 	// LabelSelector is the label selector to check if the pods match the labels before being added to the pod GC queue.
 	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty" protobuf:"bytes,2,opt,name=labelSelector"`
 	// DeleteDelayDuration specifies the duration before pods in the GC queue get deleted.
-	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$`
 	DeleteDelayDuration string `json:"deleteDelayDuration,omitempty" protobuf:"bytes,3,opt,name=deleteDelayDuration"`
 }
 
@@ -1616,7 +1614,7 @@ func (out *Outputs) GetArtifacts() Artifacts {
 
 // WorkflowStep is a reference to a template to execute in a series of step
 // +kubebuilder:validation:XValidation:rule="[has(self.withItems), has(self.withParam), has(self.withSequence)].filter(x, x).size() <= 1",message="only one of withItems, withParam, withSequence can be specified"
-// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != '', has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 type WorkflowStep struct {
 	// Name of the step
 	// +kubebuilder:validation:MaxLength=128
@@ -2214,7 +2212,6 @@ const (
 // Backoff is a backoff strategy to use within retryStrategy
 type Backoff struct {
 	// Duration is the amount to back off. Default unit is seconds, but could also be a duration (e.g. "2m", "1h")
-	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$`
 	Duration string `json:"duration,omitempty" protobuf:"varint,1,opt,name=duration"`
 	// Factor is a factor to multiply the base duration after each failed retry
 	Factor *intstr.IntOrString `json:"factor,omitempty" protobuf:"varint,2,opt,name=factor"`
@@ -2222,12 +2219,10 @@ type Backoff struct {
 	// It is important to note that if the workflow template includes activeDeadlineSeconds, the pod's deadline is initially set with activeDeadlineSeconds.
 	// However, when the workflow fails, the pod's deadline is then overridden by maxDuration.
 	// This ensures that the workflow does not exceed the specified maximum duration when retries are involved.
-	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$`
 	MaxDuration string `json:"maxDuration,omitempty" protobuf:"varint,3,opt,name=maxDuration"`
 	// Cap is a limit on revised values of the duration parameter. If a
 	// multiplication by the factor parameter would make the duration
 	// exceed the cap then the duration is set to the cap
-	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$`
 	Cap string `json:"cap,omitempty" protobuf:"varint,4,opt,name=cap"`
 }
 
@@ -3453,7 +3448,7 @@ type DAGTemplate struct {
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.dependencies)",message="cannot use both 'depends' and 'dependencies'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) || !has(self.continueOn)",message="cannot use 'continueOn' when using 'depends'"
 // +kubebuilder:validation:XValidation:rule="!has(self.depends) && !has(self.dependencies) || !self.name.matches('^[0-9]')",message="task name cannot begin with a digit when using 'depends' or 'dependencies'"
-// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != '', has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
+// +kubebuilder:validation:XValidation:rule="[has(self.template) && self.template != ”, has(self.inline), has(self.templateRef)].filter(x, x).size() == 1",message="exactly one of template, inline, or templateRef must be specified"
 type DAGTask struct {
 	// Name is the name of the target
 	// +kubebuilder:validation:MaxLength=128
@@ -3561,7 +3556,6 @@ func (t *DAGTask) ShouldExpand() bool {
 type SuspendTemplate struct {
 	// Duration is the seconds to wait before automatically resuming a template. Must be a string. Default unit is seconds.
 	// Could also be a Duration, e.g.: "2m", "6h"
-	// +kubebuilder:validation:Pattern=`^([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h)([0-9]+(\.[0-9]+)?(ns|us|µs|ms|s|m|h))*|[0-9]+)$`
 	Duration string `json:"duration,omitempty" protobuf:"bytes,1,opt,name=duration"`
 }
 
@@ -4027,7 +4021,7 @@ type MemoizationStatus struct {
 // Cache is the configuration for the type of cache to be used
 type Cache struct {
 	// ConfigMap sets a ConfigMap-based cache
-	ConfigMap *apiv1.ConfigMapKeySelector `json:"configMap" protobuf:"bytes,1,opt,name=configMap"`
+	ConfigMap *apiv1.LocalObjectReference `json:"configMap" protobuf:"bytes,1,opt,name=configMap"`
 }
 
 type SynchronizationAction interface {
