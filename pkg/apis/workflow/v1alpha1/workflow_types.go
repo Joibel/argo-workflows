@@ -3206,9 +3206,9 @@ func (a ArtifactPluginName) Volume() apiv1.Volume {
 // PluginArtifact is the location of a plugin artifact
 type PluginArtifact struct {
 	// Name is the name of the artifact driver plugin
-	Name ArtifactPluginName `json:"name" protobuf:"bytes,1,opt,name=name"`
+	Name ArtifactPluginName `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
 	// Configuration is the plugin defined configuration for the artifact driver plugin
-	Configuration string `json:"configuration" protobuf:"bytes,2,opt,name=configuration"`
+	Configuration string `json:"configuration,omitempty" protobuf:"bytes,2,opt,name=configuration"`
 	// ConnectionTimeoutSeconds is the timeout for the artifact driver connection, overriding the driver's timeout
 	ConnectionTimeoutSeconds int32 `json:"connectionTimeoutSeconds,omitempty" protobuf:"varint,3,opt,name=connectionTimeoutSeconds"`
 
