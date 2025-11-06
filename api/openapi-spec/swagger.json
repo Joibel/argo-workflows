@@ -10660,8 +10660,6 @@
       "description": "PluginArtifact is the location of a plugin artifact",
       "type": "object",
       "required": [
-        "name",
-        "configuration",
         "key"
       ],
       "properties": {

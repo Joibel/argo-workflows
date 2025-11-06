@@ -4954,7 +4954,6 @@ func schema_pkg_apis_workflow_v1alpha1_PluginArtifact(ref common.ReferenceCallba
 					"name": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Name is the name of the artifact driver plugin",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4962,7 +4961,6 @@ func schema_pkg_apis_workflow_v1alpha1_PluginArtifact(ref common.ReferenceCallba
 					"configuration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Configuration is the plugin defined configuration for the artifact driver plugin",
-							Default:     "",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -4983,7 +4981,7 @@ func schema_pkg_apis_workflow_v1alpha1_PluginArtifact(ref common.ReferenceCallba
 						},
 					},
 				},
-				Required: []string{"name", "configuration", "key"},
+				Required: []string{"key"},
 			},
 		},
 	}

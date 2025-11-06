@@ -6397,8 +6397,6 @@
         }
       },
       "required": [
-        "name",
-        "configuration",
         "key"
       ],
       "type": "object"
