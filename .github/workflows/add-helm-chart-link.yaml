@@ -1,0 +1,183 @@
+name: Add Helm Chart Link to Release
+
+on:
+  # Manual trigger with version input
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Argo Workflows version (e.g., 3.5.0 or v3.5.0)'
+        required: true
+        type: string
+      helm_chart_version:
+        description: 'Helm chart version (optional, if different from app version)'
+        required: false
+        type: string
+
+  # Can be triggered by argo-helm repository via webhook
+  repository_dispatch:
+    types: [helm-chart-published]
+
+permissions:
+  contents: write
+
+jobs:
+  add-helm-link:
+    name: Add Helm Chart Link
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "repository_dispatch" ]; then
+            # Extract version from repository_dispatch payload
+            VERSION="${{ github.event.client_payload.version }}"
+            CHART_VERSION="${{ github.event.client_payload.chart_version }}"
+          else
+            # Use workflow_dispatch input
+            VERSION="${{ inputs.version }}"
+            CHART_VERSION="${{ inputs.helm_chart_version }}"
+          fi
+
+          # Normalize version (remove 'v' prefix if present)
+          VERSION="${VERSION#v}"
+
+          # Use app version as chart version if not specified
+          if [ -z "$CHART_VERSION" ]; then
+            CHART_VERSION="$VERSION"
+          fi
+
+          echo "app_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "chart_version=$CHART_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+          echo "App Version: $VERSION"
+          echo "Chart Version: $CHART_VERSION"
+          echo "Release Tag: v$VERSION"
+
+      - name: Verify release exists
+        id: verify
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Check if release exists
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "::error::Release $TAG does not exist in this repository"
+            exit 1
+          fi
+
+      - name: Verify Helm chart exists
+        id: verify-chart
+        run: |
+          CHART_VERSION="${{ steps.version.outputs.chart_version }}"
+
+          # Check if the chart version exists on Artifact Hub
+          # Using the Helm index.yaml from the chart repository
+          INDEX_URL="https://argoproj.github.io/argo-helm/index.yaml"
+
+          echo "Checking for chart version $CHART_VERSION in $INDEX_URL"
+
+          # Download and check index
+          if curl -fsSL "$INDEX_URL" | grep -q "version: $CHART_VERSION"; then
+            echo "Helm chart version $CHART_VERSION found"
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Helm chart version $CHART_VERSION not found yet. It may not be published."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build helm chart links section
+        id: links
+        run: |
+          CHART_VERSION="${{ steps.version.outputs.chart_version }}"
+          APP_VERSION="${{ steps.version.outputs.app_version }}"
+
+          # Build the helm chart information section
+          cat > /tmp/helm-section.md << 'EOF'
+
+          ---
+
+          ## Helm Chart
+
+          The Helm chart for Argo Workflows `$APP_VERSION` is available:
+
+          - **Chart Version**: `$CHART_VERSION`
+          - **Artifact Hub**: https://artifacthub.io/packages/helm/argo/argo-workflows/$CHART_VERSION
+          - **Chart Repository**: https://argoproj.github.io/argo-helm
+
+          ### Installation
+
+          ```bash
+          # Add the Argo Helm repository
+          helm repo add argo https://argoproj.github.io/argo-helm
+          helm repo update
+
+          # Install or upgrade Argo Workflows
+          helm install argo-workflows argo/argo-workflows \
+            --version $CHART_VERSION \
+            --namespace argo \
+            --create-namespace
+          ```
+
+          For more information, see the [argo-helm repository](https://github.com/argoproj/argo-helm/tree/main/charts/argo-workflows).
+          EOF
+
+          # Replace variables
+          sed -i "s/\$CHART_VERSION/$CHART_VERSION/g" /tmp/helm-section.md
+          sed -i "s/\$APP_VERSION/$APP_VERSION/g" /tmp/helm-section.md
+
+          echo "Helm section created"
+          cat /tmp/helm-section.md
+
+      - name: Update release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Get current release body
+          CURRENT_BODY=$(gh release view "$TAG" --json body -q .body)
+
+          # Check if helm section already exists
+          if echo "$CURRENT_BODY" | grep -q "## Helm Chart"; then
+            echo "::notice::Release $TAG already contains Helm Chart section. Skipping update."
+            exit 0
+          fi
+
+          # Append helm section to release body
+          HELM_SECTION=$(cat /tmp/helm-section.md)
+          NEW_BODY="${CURRENT_BODY}${HELM_SECTION}"
+
+          # Update the release
+          echo "Updating release $TAG with Helm chart information..."
+          echo "$NEW_BODY" | gh release edit "$TAG" --notes-file -
+
+          echo "::notice::Successfully updated release $TAG with Helm chart link"
+
+      - name: Post summary
+        if: always()
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          CHART_VERSION="${{ steps.version.outputs.chart_version }}"
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Helm Chart Link Update
+
+          - **Release Tag**: $TAG
+          - **Chart Version**: $CHART_VERSION
+          - **Status**: ${{ job.status }}
+
+          ${{ steps.verify.outputs.exists == 'true' && '✅ Release exists' || '❌ Release not found' }}
+          ${{ steps.verify-chart.outputs.exists == 'true' && '✅ Helm chart exists' || '⚠️ Helm chart not found (may not be published yet)' }}
+
+          [View Release](https://github.com/${{ github.repository }}/releases/tag/$TAG)
+          EOF
