@@ -7,15 +7,53 @@ yourself. You can use a client library for the programming language you are usin
 
 Client libraries often handle common tasks such as authentication for you.
 
-## Auto-generated client libraries
+## Officially Supported Client Libraries
 
-The following client libraries are auto-generated using [OpenAPI Generator](https://github.com/OpenAPITools/openapi-generator-cli).
-Please expect very minimal support from the Argo team.
+### Go SDK
+
+The Go SDK is a fully-featured, officially supported client for Argo Workflows. It provides two client approaches:
+- **Kubernetes Client** - Direct CRD access for in-cluster applications
+- **Argo Server Client** - gRPC/HTTP access for remote applications
+
+**Getting Started:**
+```bash
+go get github.com/argoproj/argo-workflows/v3@latest
+```
+
+**Quick Example:**
+```go
+import (
+    "context"
+    wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
+    wfclientset "github.com/argoproj/argo-workflows/v3/pkg/client/clientset/versioned"
+)
+
+clientset := wfclientset.NewForConfigOrDie(config)
+wfClient := clientset.ArgoprojV1alpha1().Workflows("default")
+workflow, err := wfClient.Create(ctx, &myWorkflow, metav1.CreateOptions{})
+```
+
+**Documentation:**
+- [Go SDK Guide](./go-sdk-guide.md) - Comprehensive documentation
+- [Migration Guide](./go-sdk-migration-guide.md) - Migrating to v3.7+
+- [Examples](../examples/go-sdk/) - Working code examples
+- [API Reference](https://pkg.go.dev/github.com/argoproj/argo-workflows/v3)
+
+**Key Features:**
+- ✓ Full CRUD operations for all resource types
+- ✓ Workflow watching and listing with field selectors
+- ✓ Remote Argo Server access via gRPC/HTTP
+- ✓ In-cluster and kubeconfig authentication
+- ✓ Context-aware operations (since v3.7)
+- ✓ Comprehensive type definitions with validation
+
+## Community-Supported Client Libraries
+
+The following client libraries are community-maintained with minimal support from the Argo team.
 
 | Language | Client Library                                                                                    | Examples/Docs                                                                                                         |
 |----------|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| Golang   | [`apiclient.go`](https://github.com/argoproj/argo-workflows/blob/main/pkg/apiclient/apiclient.go) | [Example](https://github.com/argoproj/argo-workflows/blob/main/cmd/argo/commands/submit.go)                           |
-| Java     | [Java](https://github.com/argoproj/argo-workflows/blob/main/sdks/java)                            |                                                                                                                       |
+| Java     | [Java](https://github.com/argoproj/argo-workflows/blob/main/sdks/java)                            | Auto-generated using OpenAPI Generator                                                                                                       |
 | Python   | ⚠️ deprecated [Python](https://github.com/argoproj/argo-workflows/blob/main/sdks/python)           | Use [Hera](#hera-python-sdk) instead. Will be removed in version 3.7 |
 
 ## Hera Python SDK
