@@ -266,6 +266,9 @@ jobs:
           - test: test-plugins
             profile: plugins
             use-api: false
+          - test: test-go-sdk
+            profile: minimal
+            use-api: false
           - test: test-java-sdk
             profile: minimal
             use-api: true

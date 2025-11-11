@@ -29,11 +29,11 @@ Each example is a **separate Go module** with its own `go.mod` file. This design
 
 ### Makefile Target
 
-The examples are tested using the `test-go-sdk-examples` Makefile target:
+The examples are tested using the `test-go-sdk` Makefile target:
 
 ```makefile
-.PHONY: test-go-sdk-examples
-test-go-sdk-examples: ## Compile all Go SDK examples to ensure they build
+.PHONY: test-go-sdk
+test-go-sdk: ## Compile all Go SDK examples to ensure they build
 	@echo "Testing Go SDK examples..."
 	@for dir in examples/go-sdk/*/; do \
 		if [ -f "$$dir/go.mod" ]; then \
@@ -52,26 +52,26 @@ This target:
 
 ### GitHub Actions Workflow
 
-The examples are tested in the CI workflow (`.github/workflows/ci-build.yaml`) as a separate job:
+The examples are tested in the CI workflow (`.github/workflows/ci-build.yaml`) as part of the E2E test matrix:
 
 ```yaml
-  go-sdk-examples:
-    name: Go SDK Examples
-    needs: [ changed-files ]
-    if: ${{ needs.changed-files.outputs.codegen == 'true' || needs.changed-files.outputs.tests == 'true' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@...
-      - uses: actions/setup-go@...
-        with:
-          go-version: "1.24"
-          cache: true
-      - name: Build Go SDK examples
-        run: make test-go-sdk-examples
+matrix:
+  include:
+    # ... other tests ...
+    - test: test-go-sdk
+      profile: minimal
+      use-api: false
+    - test: test-java-sdk
+      profile: minimal
+      use-api: true
+    - test: test-python-sdk
+      profile: minimal
+      use-api: true
 ```
 
-The job runs when:
+This runs alongside other SDK tests like `test-java-sdk` and `test-python-sdk`.
+
+The test runs when:
 - Code generation files change (`codegen == 'true'`)
 - Test files change (`tests == 'true'`)
 - This ensures examples are tested when SDK code changes
@@ -81,7 +81,7 @@ The job runs when:
 ### Test all examples
 
 ```bash
-make test-go-sdk-examples
+make test-go-sdk
 ```
 
 ### Test specific example
@@ -156,7 +156,7 @@ To add a new Go SDK example:
 8. **Test in CI:**
    ```bash
    # From repo root
-   make test-go-sdk-examples
+   make test-go-sdk
    ```
 
 The new example will automatically be picked up by the CI system!

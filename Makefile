@@ -962,8 +962,8 @@ pkg/apiclient/artifact/artifact.swagger.json: $(PROTO_BINARIES) $(TYPES) pkg/api
 # Add artifact-proto to swagger dependencies
 swagger: pkg/apiclient/artifact/artifact.swagger.json
 
-.PHONY: test-go-sdk-examples
-test-go-sdk-examples: ## Compile all Go SDK examples to ensure they build
+.PHONY: test-go-sdk
+test-go-sdk: ## Compile all Go SDK examples to ensure they build
 	@echo "Testing Go SDK examples..."
 	@for dir in examples/go-sdk/*/; do \
 		if [ -f "$$dir/go.mod" ]; then \
