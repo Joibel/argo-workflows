@@ -1409,11 +1409,13 @@ func (woc *wfOperationCtx) assessNodeStatus(ctx context.Context, pod *apiv1.Pod,
 		// Check if this pod qualifies for automatic restart (failed before entering Running state)
 		// Skip if pod is already being deleted (we've already initiated restart)
 		if pod.DeletionTimestamp == nil && woc.shouldAutoRestartPod(ctx, pod, tmpl, old) {
+			updated.FailedPodRestarts++
 			woc.log.WithFields(logging.Fields{
-				"podName":  pod.Name,
-				"nodeID":   old.ID,
-				"reason":   pod.Status.Reason,
-				"message":  pod.Status.Message,
+				"podName":      pod.Name,
+				"nodeID":       old.ID,
+				"restartCount": updated.FailedPodRestarts,
+				"reason":       pod.Status.Reason,
+				"message":      pod.Status.Message,
 			}).Info(ctx, "Pod qualifies for automatic restart - marking as pending")
 			updated.Phase = wfv1.NodePending
 			updated.Message = fmt.Sprintf("Pod auto-restarting due to %s: %s", pod.Status.Reason, pod.Status.Message)
@@ -1770,34 +1772,16 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	}
 
 	// Check if we've exceeded the max restart count
-	currentRestarts := getFailedPodRestartCount(woc.wf, node.ID)
 	maxRestarts := config.GetMaxRestarts()
-	if currentRestarts >= maxRestarts {
+	if node.FailedPodRestarts >= maxRestarts {
 		woc.log.WithFields(logging.Fields{
 			"podName":         pod.Name,
 			"nodeID":          node.ID,
-			"currentRestarts": currentRestarts,
+			"currentRestarts": node.FailedPodRestarts,
 			"maxRestarts":     maxRestarts,
 		}).Info(ctx, "Pod has exceeded max auto-restart attempts")
 		return false
 	}
-
-	// Increment the restart count
-	newCount := incrementFailedPodRestartCount(woc.wf, node.ID)
-	woc.log.WithFields(logging.Fields{
-		"podName":      pod.Name,
-		"nodeID":       node.ID,
-		"restartCount": newCount,
-		"maxRestarts":  maxRestarts,
-		"reason":       restartInfo.reason,
-	}).Info(ctx, "Auto-restarting pod that failed before starting")
-
-	// Mark workflow as updated since we changed annotations
-	woc.updated = true
-
-	// Emit an event for visibility
-	woc.eventRecorder.Event(woc.wf, apiv1.EventTypeNormal, "PodAutoRestart",
-		fmt.Sprintf("Auto-restarting pod %s due to %s (attempt %d/%d)", pod.Name, restartInfo.reason, newCount, maxRestarts))
 
 	return true
 }

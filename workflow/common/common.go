@@ -57,11 +57,6 @@ const (
 	// the strategy whose artifacts are being deleted
 	AnnotationKeyArtifactGCStrategy = workflow.WorkflowFullName + "/artifact-gc-strategy"
 
-	// AnnotationKeyFailedPodRestartCount tracks the number of automatic restarts for pods that
-	// failed before entering Running state (e.g., due to eviction, preemption).
-	// Format: workflows.argoproj.io/failed-pod-restart-count-<nodeID> = "N"
-	AnnotationKeyFailedPodRestartCountPrefix = workflow.WorkflowFullName + "/failed-pod-restart-count-"
-
 	// LabelParallelismLimit is a label applied on namespace objects to control the per namespace parallelism.
 	LabelParallelismLimit = workflow.WorkflowFullName + "/parallelism-limit"
 

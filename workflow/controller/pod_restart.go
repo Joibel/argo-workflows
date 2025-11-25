@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"strconv"
 	"strings"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -179,40 +178,4 @@ func getEvictionReason(pod *apiv1.Pod) string {
 	}
 
 	return pod.Status.Reason
-}
-
-// getFailedPodRestartCount returns the current restart count for a node from workflow annotations.
-func getFailedPodRestartCount(wf *wfv1.Workflow, nodeID string) int32 {
-	if wf.Annotations == nil {
-		return 0
-	}
-	key := common.AnnotationKeyFailedPodRestartCountPrefix + nodeID
-	if countStr, ok := wf.Annotations[key]; ok {
-		if count, err := strconv.ParseInt(countStr, 10, 32); err == nil {
-			return int32(count)
-		}
-	}
-	return 0
-}
-
-// setFailedPodRestartCount sets the restart count for a node in workflow annotations.
-// Returns true if the annotation was changed.
-func setFailedPodRestartCount(wf *wfv1.Workflow, nodeID string, count int32) bool {
-	if wf.Annotations == nil {
-		wf.Annotations = make(map[string]string)
-	}
-	key := common.AnnotationKeyFailedPodRestartCountPrefix + nodeID
-	newValue := strconv.FormatInt(int64(count), 10)
-	if wf.Annotations[key] != newValue {
-		wf.Annotations[key] = newValue
-		return true
-	}
-	return false
-}
-
-// incrementFailedPodRestartCount increments and returns the new restart count for a node.
-func incrementFailedPodRestartCount(wf *wfv1.Workflow, nodeID string) int32 {
-	count := getFailedPodRestartCount(wf, nodeID) + 1
-	setFailedPodRestartCount(wf, nodeID, count)
-	return count
 }
