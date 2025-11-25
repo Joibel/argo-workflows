@@ -337,9 +337,9 @@ func TestAnalyzePodForRestart(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := AnalyzePodForRestart(tt.pod, tt.tmpl)
-			assert.Equal(t, tt.shouldRestart, result.ShouldRestart)
-			assert.Equal(t, tt.neverStarted, result.NeverStarted)
+			result := analyzePodForRestart(tt.pod, tt.tmpl)
+			assert.Equal(t, tt.shouldRestart, result.shouldRestart)
+			assert.Equal(t, tt.neverStarted, result.neverStarted)
 		})
 	}
 }
@@ -394,7 +394,7 @@ func TestGetEvictionReason(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := GetEvictionReason(tt.pod)
+			result := getEvictionReason(tt.pod)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
@@ -403,7 +403,7 @@ func TestGetEvictionReason(t *testing.T) {
 func TestFailedPodRestartCount(t *testing.T) {
 	t.Run("get count from empty workflow", func(t *testing.T) {
 		wf := &wfv1.Workflow{}
-		count := GetFailedPodRestartCount(wf, "node-123")
+		count := getFailedPodRestartCount(wf, "node-123")
 		assert.Equal(t, int32(0), count)
 	})
 
@@ -415,7 +415,7 @@ func TestFailedPodRestartCount(t *testing.T) {
 				},
 			},
 		}
-		count := GetFailedPodRestartCount(wf, "node-123")
+		count := getFailedPodRestartCount(wf, "node-123")
 		assert.Equal(t, int32(0), count)
 	})
 
@@ -427,13 +427,13 @@ func TestFailedPodRestartCount(t *testing.T) {
 				},
 			},
 		}
-		count := GetFailedPodRestartCount(wf, "node-123")
+		count := getFailedPodRestartCount(wf, "node-123")
 		assert.Equal(t, int32(3), count)
 	})
 
 	t.Run("set count on workflow with no annotations", func(t *testing.T) {
 		wf := &wfv1.Workflow{}
-		changed := SetFailedPodRestartCount(wf, "node-123", 2)
+		changed := setFailedPodRestartCount(wf, "node-123", 2)
 		assert.True(t, changed)
 		assert.Equal(t, "2", wf.Annotations[common.AnnotationKeyFailedPodRestartCountPrefix+"node-123"])
 	})
@@ -446,7 +446,7 @@ func TestFailedPodRestartCount(t *testing.T) {
 				},
 			},
 		}
-		changed := SetFailedPodRestartCount(wf, "node-123", 2)
+		changed := setFailedPodRestartCount(wf, "node-123", 2)
 		assert.False(t, changed)
 	})
 
@@ -458,14 +458,14 @@ func TestFailedPodRestartCount(t *testing.T) {
 				},
 			},
 		}
-		newCount := IncrementFailedPodRestartCount(wf, "node-123")
+		newCount := incrementFailedPodRestartCount(wf, "node-123")
 		assert.Equal(t, int32(3), newCount)
 		assert.Equal(t, "3", wf.Annotations[common.AnnotationKeyFailedPodRestartCountPrefix+"node-123"])
 	})
 
 	t.Run("increment count from zero", func(t *testing.T) {
 		wf := &wfv1.Workflow{}
-		newCount := IncrementFailedPodRestartCount(wf, "node-123")
+		newCount := incrementFailedPodRestartCount(wf, "node-123")
 		assert.Equal(t, int32(1), newCount)
 		assert.Equal(t, "1", wf.Annotations[common.AnnotationKeyFailedPodRestartCountPrefix+"node-123"])
 	})

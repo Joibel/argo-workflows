@@ -1763,13 +1763,13 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	}
 
 	// Analyze if the pod qualifies for restart
-	restartInfo := AnalyzePodForRestart(pod, tmpl)
-	if !restartInfo.ShouldRestart {
+	restartInfo := analyzePodForRestart(pod, tmpl)
+	if !restartInfo.shouldRestart {
 		return false
 	}
 
 	// Check if we've exceeded the max restart count
-	currentRestarts := GetFailedPodRestartCount(woc.wf, node.ID)
+	currentRestarts := getFailedPodRestartCount(woc.wf, node.ID)
 	maxRestarts := config.GetMaxRestarts()
 	if currentRestarts >= maxRestarts {
 		woc.log.WithFields(logging.Fields{
@@ -1782,13 +1782,13 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	}
 
 	// Increment the restart count
-	newCount := IncrementFailedPodRestartCount(woc.wf, node.ID)
+	newCount := incrementFailedPodRestartCount(woc.wf, node.ID)
 	woc.log.WithFields(logging.Fields{
 		"podName":      pod.Name,
 		"nodeID":       node.ID,
 		"restartCount": newCount,
 		"maxRestarts":  maxRestarts,
-		"reason":       restartInfo.Reason,
+		"reason":       restartInfo.reason,
 	}).Info(ctx, "Auto-restarting pod that failed before starting")
 
 	// Mark workflow as updated since we changed annotations
@@ -1796,7 +1796,7 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 
 	// Emit an event for visibility
 	woc.eventRecorder.Event(woc.wf, apiv1.EventTypeNormal, "PodAutoRestart",
-		fmt.Sprintf("Auto-restarting pod %s due to %s (attempt %d/%d)", pod.Name, restartInfo.Reason, newCount, maxRestarts))
+		fmt.Sprintf("Auto-restarting pod %s due to %s (attempt %d/%d)", pod.Name, restartInfo.reason, newCount, maxRestarts))
 
 	return true
 }
