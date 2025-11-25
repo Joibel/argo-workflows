@@ -1407,7 +1407,8 @@ func (woc *wfOperationCtx) assessNodeStatus(ctx context.Context, pod *apiv1.Pod,
 		updated.Daemoned = nil
 
 		// Check if this pod qualifies for automatic restart (failed before entering Running state)
-		if woc.shouldAutoRestartPod(ctx, pod, tmpl, old) {
+		// Skip if pod is already being deleted (we've already initiated restart)
+		if pod.DeletionTimestamp == nil && woc.shouldAutoRestartPod(ctx, pod, tmpl, old) {
 			woc.log.WithFields(logging.Fields{
 				"podName":  pod.Name,
 				"nodeID":   old.ID,
