@@ -91,31 +91,9 @@ func AnalyzePodForRestart(pod *apiv1.Pod, tmpl *wfv1.Template) PodRestartInfo {
 // mainContainerNeverStarted checks if the main container(s) never entered the Running state.
 // This indicates the pod failed before any user code could execute.
 func mainContainerNeverStarted(pod *apiv1.Pod, tmpl *wfv1.Template) bool {
-	// First, check if any container statuses are available
-	allStatuses := append(pod.Status.InitContainerStatuses, pod.Status.ContainerStatuses...)
-
-	if len(allStatuses) == 0 {
+	if len(pod.Status.ContainerStatuses) == 0 {
 		// No container statuses means the pod likely never got scheduled or started
 		return true
-	}
-
-	// Check init containers first - if init container never started, main container couldn't have
-	for _, status := range pod.Status.InitContainerStatuses {
-		if status.Name == common.InitContainerName {
-			// If init container is still waiting or terminated without ever running,
-			// the main container couldn't have started
-			if status.State.Running == nil && status.LastTerminationState.Running == nil {
-				// Init container never ran, check if it terminated
-				if status.State.Terminated != nil {
-					// Init container terminated, which is expected
-					continue
-				}
-				if status.State.Waiting != nil {
-					// Init container still waiting - never started
-					return true
-				}
-			}
-		}
 	}
 
 	// Check main container(s)

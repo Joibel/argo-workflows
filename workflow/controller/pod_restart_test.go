@@ -93,20 +93,10 @@ func TestMainContainerNeverStarted(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "init container still waiting",
+			name: "main container waiting for pod initializing",
 			pod: &apiv1.Pod{
 				Status: apiv1.PodStatus{
 					Phase: apiv1.PodFailed,
-					InitContainerStatuses: []apiv1.ContainerStatus{
-						{
-							Name: common.InitContainerName,
-							State: apiv1.ContainerState{
-								Waiting: &apiv1.ContainerStateWaiting{
-									Reason: "ImagePullBackOff",
-								},
-							},
-						},
-					},
 					ContainerStatuses: []apiv1.ContainerStatus{
 						{
 							Name: common.MainContainerName,
