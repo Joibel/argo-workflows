@@ -1751,17 +1751,14 @@ func (woc *wfOperationCtx) inferFailedReason(ctx context.Context, pod *apiv1.Pod
 // 2. The pod failed before its main container entered Running state
 // 3. The failure reason is a restartable infrastructure failure (Evicted, Preempted, etc.)
 // 4. The restart count hasn't exceeded the configured limit
-// 5. The template doesn't have a retryStrategy (to avoid conflict with explicit retry)
+//
+// This works in conjunction with retryStrategy - infrastructure failures that happen
+// before the container starts are handled transparently here, while application-level
+// failures after the container runs are handled by retryStrategy.
 func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.Pod, tmpl *wfv1.Template, node *wfv1.NodeStatus) bool {
 	// Check if the feature is enabled
 	config := woc.controller.Config.FailedPodRestart
 	if !config.IsEnabled() {
-		return false
-	}
-
-	// Don't auto-restart if the template has a retryStrategy - let the retry logic handle it
-	if tmpl != nil && woc.retryStrategy(tmpl) != nil {
-		woc.log.WithField("podName", pod.Name).Debug(ctx, "Pod has retryStrategy, skipping auto-restart")
 		return false
 	}
 
