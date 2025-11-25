@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
@@ -79,14 +78,15 @@ func TestFailedPodRestartConfig_GetBackoffDuration(t *testing.T) {
 	var nilConfig *FailedPodRestartConfig
 	assert.Equal(t, 30*time.Second, nilConfig.GetBackoffDuration())
 
-	// config with nil BackoffDuration should return default of 30s
+	// config with nil BackoffSeconds should return default of 30s
 	configNoBackoff := &FailedPodRestartConfig{Enabled: true}
 	assert.Equal(t, 30*time.Second, configNoBackoff.GetBackoffDuration())
 
-	// config with BackoffDuration should return that value
+	// config with BackoffSeconds should return that value
+	backoffSeconds := int32(60)
 	configWithBackoff := &FailedPodRestartConfig{
-		Enabled:         true,
-		BackoffDuration: &metav1.Duration{Duration: 60 * time.Second},
+		Enabled:        true,
+		BackoffSeconds: &backoffSeconds,
 	}
 	assert.Equal(t, 60*time.Second, configWithBackoff.GetBackoffDuration())
 }

@@ -144,9 +144,9 @@ type FailedPodRestartConfig struct {
 	// This prevents infinite restart loops. Default is 3.
 	MaxRestarts *int32 `json:"maxRestarts,omitempty"`
 
-	// BackoffDuration is the initial duration to wait before restarting a failed pod.
-	// Default is "30s".
-	BackoffDuration *metav1.Duration `json:"backoffDuration,omitempty"`
+	// BackoffSeconds is the duration in seconds to wait before restarting a failed pod.
+	// Default is 30.
+	BackoffSeconds *int32 `json:"backoffSeconds,omitempty"`
 }
 
 // GetMaxRestarts returns the configured max restarts or the default value of 3.
@@ -159,10 +159,10 @@ func (c *FailedPodRestartConfig) GetMaxRestarts() int32 {
 
 // GetBackoffDuration returns the configured backoff duration or the default value of 30 seconds.
 func (c *FailedPodRestartConfig) GetBackoffDuration() time.Duration {
-	if c == nil || c.BackoffDuration == nil {
+	if c == nil || c.BackoffSeconds == nil {
 		return 30 * time.Second
 	}
-	return c.BackoffDuration.Duration
+	return time.Duration(*c.BackoffSeconds) * time.Second
 }
 
 // IsEnabled returns true if the feature is enabled.
