@@ -1405,6 +1405,20 @@ func (woc *wfOperationCtx) assessNodeStatus(ctx context.Context, pod *apiv1.Pod,
 		updated.Phase, updated.Message = woc.inferFailedReason(ctx, pod, tmpl)
 		woc.log.WithFields(logging.Fields{"message": updated.Message, "displayName": old.DisplayName, "templateName": wfutil.GetTemplateFromNode(*old), "pod": pod.Name}).Info(ctx, "Pod failed")
 		updated.Daemoned = nil
+
+		// Check if this pod qualifies for automatic restart (failed before entering Running state)
+		if woc.shouldAutoRestartPod(ctx, pod, tmpl, old) {
+			woc.log.WithFields(logging.Fields{
+				"podName":  pod.Name,
+				"nodeID":   old.ID,
+				"reason":   pod.Status.Reason,
+				"message":  pod.Status.Message,
+			}).Info(ctx, "Pod qualifies for automatic restart - marking as pending")
+			updated.Phase = wfv1.NodePending
+			updated.Message = fmt.Sprintf("Pod auto-restarting due to %s: %s", pod.Status.Reason, pod.Status.Message)
+			// Queue pod for deletion so a new one will be created
+			woc.queuePodForDeletion(ctx, pod)
+		}
 	case apiv1.PodRunning:
 		// Daemons are a special case we need to understand the rules:
 		// A node transitions into "daemoned" only if it's a daemon template and it becomes running AND ready.
@@ -1729,6 +1743,80 @@ func (woc *wfOperationCtx) inferFailedReason(ctx context.Context, pod *apiv1.Pod
 	// resulting in a 137 exit code (which we had ignored earlier). If failMessages is empty, it
 	// indicates that this is the case and we return Success instead of Failure.
 	return wfv1.NodeSucceeded, ""
+}
+
+// shouldAutoRestartPod checks if a failed pod should be automatically restarted.
+// A pod qualifies for auto-restart if:
+// 1. The failedPodRestart feature is enabled in controller config
+// 2. The pod failed before its main container entered Running state
+// 3. The failure reason is a restartable infrastructure failure (Evicted, Preempted, etc.)
+// 4. The restart count hasn't exceeded the configured limit
+// 5. The template doesn't have a retryStrategy (to avoid conflict with explicit retry)
+func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.Pod, tmpl *wfv1.Template, node *wfv1.NodeStatus) bool {
+	// Check if the feature is enabled
+	config := woc.controller.Config.FailedPodRestart
+	if !config.IsEnabled() {
+		return false
+	}
+
+	// Don't auto-restart if the template has a retryStrategy - let the retry logic handle it
+	if tmpl != nil && woc.retryStrategy(tmpl) != nil {
+		woc.log.WithField("podName", pod.Name).Debug(ctx, "Pod has retryStrategy, skipping auto-restart")
+		return false
+	}
+
+	// Analyze if the pod qualifies for restart
+	restartInfo := AnalyzePodForRestart(pod, tmpl)
+	if !restartInfo.ShouldRestart {
+		return false
+	}
+
+	// Check if we've exceeded the max restart count
+	currentRestarts := GetFailedPodRestartCount(woc.wf, node.ID)
+	maxRestarts := config.GetMaxRestarts()
+	if currentRestarts >= maxRestarts {
+		woc.log.WithFields(logging.Fields{
+			"podName":         pod.Name,
+			"nodeID":          node.ID,
+			"currentRestarts": currentRestarts,
+			"maxRestarts":     maxRestarts,
+		}).Info(ctx, "Pod has exceeded max auto-restart attempts")
+		return false
+	}
+
+	// Increment the restart count
+	newCount := IncrementFailedPodRestartCount(woc.wf, node.ID)
+	woc.log.WithFields(logging.Fields{
+		"podName":      pod.Name,
+		"nodeID":       node.ID,
+		"restartCount": newCount,
+		"maxRestarts":  maxRestarts,
+		"reason":       restartInfo.Reason,
+	}).Info(ctx, "Auto-restarting pod that failed before starting")
+
+	// Mark workflow as updated since we changed annotations
+	woc.updated = true
+
+	// Emit an event for visibility
+	woc.eventRecorder.Event(woc.wf, apiv1.EventTypeNormal, "PodAutoRestart",
+		fmt.Sprintf("Auto-restarting pod %s due to %s (attempt %d/%d)", pod.Name, restartInfo.Reason, newCount, maxRestarts))
+
+	return true
+}
+
+// queuePodForDeletion marks a pod for deletion. The pod will be deleted by the controller
+// after the node status is updated, allowing a new pod to be created.
+func (woc *wfOperationCtx) queuePodForDeletion(ctx context.Context, pod *apiv1.Pod) {
+	woc.log.WithField("podName", pod.Name).Info(ctx, "Queueing pod for deletion due to auto-restart")
+
+	// Delete the pod - using background propagation policy to ensure immediate deletion
+	propagation := metav1.DeletePropagationBackground
+	err := woc.controller.kubeclientset.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{
+		PropagationPolicy: &propagation,
+	})
+	if err != nil && !apierr.IsNotFound(err) {
+		woc.log.WithError(err).WithField("podName", pod.Name).Warn(ctx, "Failed to delete pod for auto-restart")
+	}
 }
 
 func (woc *wfOperationCtx) createPVCs(ctx context.Context) error {
