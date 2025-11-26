@@ -146,95 +146,50 @@ func TestMainContainerNeverStarted(t *testing.T) {
 
 func TestIsRestartableReason(t *testing.T) {
 	tests := []struct {
-		name       string
-		reason     string
-		message    string
-		conditions []apiv1.PodCondition
-		expected   bool
+		name     string
+		reason   string
+		expected bool
 	}{
 		{
-			name:     "evicted due to DiskPressure",
+			name:     "Evicted",
 			reason:   "Evicted",
-			message:  "The node had condition: [DiskPressure]",
 			expected: true,
 		},
 		{
-			name:     "evicted due to MemoryPressure",
-			reason:   "Evicted",
-			message:  "The node had condition: [MemoryPressure]",
-			expected: true,
-		},
-		{
-			name:     "preempted",
-			reason:   "Preempted",
-			message:  "",
-			expected: true,
-		},
-		{
-			name:     "preempted in message",
-			reason:   "",
-			message:  "Pod was preempted by higher priority pod",
-			expected: true,
-		},
-		{
-			name:     "node shutdown",
+			name:     "NodeShutdown",
 			reason:   "NodeShutdown",
-			message:  "",
 			expected: true,
 		},
 		{
-			name:     "node affinity",
+			name:     "NodeAffinity",
 			reason:   "NodeAffinity",
-			message:  "",
 			expected: true,
 		},
 		{
-			name:     "unexpected admission error",
+			name:     "UnexpectedAdmissionError",
 			reason:   "UnexpectedAdmissionError",
-			message:  "",
 			expected: true,
 		},
 		{
 			name:     "OOMKilled is not restartable",
 			reason:   "OOMKilled",
-			message:  "",
 			expected: false,
 		},
 		{
-			name:     "generic error",
+			name:     "Error is not restartable",
 			reason:   "Error",
-			message:  "some error",
 			expected: false,
 		},
 		{
-			name:     "disruption target condition",
+			name:     "empty reason",
 			reason:   "",
-			message:  "",
-			conditions: []apiv1.PodCondition{
-				{
-					Type:   "DisruptionTarget",
-					Status: apiv1.ConditionTrue,
-				},
-			},
-			expected: true,
-		},
-		{
-			name:     "disruption target condition false",
-			reason:   "",
-			message:  "",
-			conditions: []apiv1.PodCondition{
-				{
-					Type:   "DisruptionTarget",
-					Status: apiv1.ConditionFalse,
-				},
-			},
 			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isRestartableReason(tt.reason, tt.message, tt.conditions)
+			result := isRestartableReason(tt.reason)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
