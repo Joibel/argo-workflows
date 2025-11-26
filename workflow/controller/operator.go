@@ -1765,8 +1765,7 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	}
 
 	// Analyze if the pod qualifies for restart
-	restartInfo := analyzePodForRestart(pod, tmpl)
-	if !restartInfo.shouldRestart {
+	if !analyzePodForRestart(pod, tmpl) {
 		return false
 	}
 

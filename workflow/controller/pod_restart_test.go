@@ -197,11 +197,10 @@ func TestIsRestartableReason(t *testing.T) {
 
 func TestAnalyzePodForRestart(t *testing.T) {
 	tests := []struct {
-		name          string
-		pod           *apiv1.Pod
-		tmpl          *wfv1.Template
-		shouldRestart bool
-		neverStarted  bool
+		name     string
+		pod      *apiv1.Pod
+		tmpl     *wfv1.Template
+		expected bool
 	}{
 		{
 			name: "running pod should not restart",
@@ -210,8 +209,7 @@ func TestAnalyzePodForRestart(t *testing.T) {
 					Phase: apiv1.PodRunning,
 				},
 			},
-			shouldRestart: false,
-			neverStarted:  false,
+			expected: false,
 		},
 		{
 			name: "succeeded pod should not restart",
@@ -220,8 +218,7 @@ func TestAnalyzePodForRestart(t *testing.T) {
 					Phase: apiv1.PodSucceeded,
 				},
 			},
-			shouldRestart: false,
-			neverStarted:  false,
+			expected: false,
 		},
 		{
 			name: "evicted pod that never started should restart",
@@ -242,8 +239,7 @@ func TestAnalyzePodForRestart(t *testing.T) {
 					},
 				},
 			},
-			shouldRestart: true,
-			neverStarted:  true,
+			expected: true,
 		},
 		{
 			name: "evicted pod that ran should not restart",
@@ -266,8 +262,7 @@ func TestAnalyzePodForRestart(t *testing.T) {
 					},
 				},
 			},
-			shouldRestart: false,
-			neverStarted:  false,
+			expected: false,
 		},
 		{
 			name: "failed pod with non-restartable reason should not restart",
@@ -285,73 +280,14 @@ func TestAnalyzePodForRestart(t *testing.T) {
 					},
 				},
 			},
-			shouldRestart: false,
-			neverStarted:  true,
+			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := analyzePodForRestart(tt.pod, tt.tmpl)
-			assert.Equal(t, tt.shouldRestart, result.shouldRestart)
-			assert.Equal(t, tt.neverStarted, result.neverStarted)
-		})
-	}
-}
-
-func TestGetEvictionReason(t *testing.T) {
-	tests := []struct {
-		name     string
-		pod      *apiv1.Pod
-		expected string
-	}{
-		{
-			name: "evicted with DiskPressure",
-			pod: &apiv1.Pod{
-				Status: apiv1.PodStatus{
-					Reason:  "Evicted",
-					Message: "The node had condition: [DiskPressure]",
-				},
-			},
-			expected: "DiskPressure",
-		},
-		{
-			name: "evicted with MemoryPressure",
-			pod: &apiv1.Pod{
-				Status: apiv1.PodStatus{
-					Reason:  "Evicted",
-					Message: "The node had condition: [MemoryPressure]",
-				},
-			},
-			expected: "MemoryPressure",
-		},
-		{
-			name: "not evicted",
-			pod: &apiv1.Pod{
-				Status: apiv1.PodStatus{
-					Reason:  "OOMKilled",
-					Message: "Container killed",
-				},
-			},
-			expected: "",
-		},
-		{
-			name: "evicted without bracket format",
-			pod: &apiv1.Pod{
-				Status: apiv1.PodStatus{
-					Reason:  "Evicted",
-					Message: "Node out of resources",
-				},
-			},
-			expected: "Evicted",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getEvictionReason(tt.pod)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
-

@@ -1,42 +1,25 @@
 package controller
 
 import (
-	"strings"
-
 	apiv1 "k8s.io/api/core/v1"
 
 	wfv1 "github.com/argoproj/argo-workflows/v3/pkg/apis/workflow/v1alpha1"
 	"github.com/argoproj/argo-workflows/v3/workflow/common"
 )
 
-// podRestartInfo contains information about whether a pod should be restarted.
-type podRestartInfo struct {
-	shouldRestart bool
-	reason        string
-	neverStarted  bool
-}
-
-// analyzePodForRestart analyzes a failed pod to determine if it should be automatically restarted.
+// analyzePodForRestart determines if a failed pod should be automatically restarted.
 // A pod qualifies for restart if:
 // 1. It failed (pod.Status.Phase == PodFailed)
 // 2. Its main container never entered the Running state
 // 3. The failure reason is a restartable infrastructure failure
-func analyzePodForRestart(pod *apiv1.Pod, tmpl *wfv1.Template) podRestartInfo {
-	info := podRestartInfo{
-		reason: pod.Status.Reason,
-	}
-
+func analyzePodForRestart(pod *apiv1.Pod, tmpl *wfv1.Template) bool {
 	if pod.Status.Phase != apiv1.PodFailed {
-		return info
+		return false
 	}
-
-	info.neverStarted = mainContainerNeverStarted(pod, tmpl)
-	if !info.neverStarted {
-		return info
+	if !mainContainerNeverStarted(pod, tmpl) {
+		return false
 	}
-
-	info.shouldRestart = isRestartableReason(pod.Status.Reason)
-	return info
+	return isRestartableReason(pod.Status.Reason)
 }
 
 // mainContainerNeverStarted checks if the main container(s) never entered the Running state.
@@ -78,22 +61,4 @@ func isRestartableReason(reason string) bool {
 		return true
 	}
 	return false
-}
-
-// getEvictionReason extracts the eviction reason from a pod's status message.
-// Returns empty string if no eviction reason found.
-func getEvictionReason(pod *apiv1.Pod) string {
-	if pod.Status.Reason != "Evicted" {
-		return ""
-	}
-
-	// Format: "The node had condition: [DiskPressure]"
-	msg := pod.Status.Message
-	if idx := strings.Index(msg, "["); idx != -1 {
-		if endIdx := strings.Index(msg[idx:], "]"); endIdx != -1 {
-			return msg[idx+1 : idx+endIdx]
-		}
-	}
-
-	return pod.Status.Reason
 }
