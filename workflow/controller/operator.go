@@ -1419,8 +1419,7 @@ func (woc *wfOperationCtx) assessNodeStatus(ctx context.Context, pod *apiv1.Pod,
 			}).Info(ctx, "Pod qualifies for automatic restart - marking as pending")
 			updated.Phase = wfv1.NodePending
 			updated.Message = fmt.Sprintf("Pod auto-restarting due to %s: %s", pod.Status.Reason, pod.Status.Message)
-			// Queue pod for deletion so a new one will be created
-			woc.queuePodForDeletion(ctx, pod)
+			woc.controller.PodController.DeletePod(ctx, pod.Namespace, pod.Name)
 		}
 	case apiv1.PodRunning:
 		// Daemons are a special case we need to understand the rules:
@@ -1784,13 +1783,6 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	}
 
 	return true
-}
-
-// queuePodForDeletion queues a pod for deletion via the pod controller's cleanup queue.
-// This ensures finalizers are properly handled before deletion.
-func (woc *wfOperationCtx) queuePodForDeletion(ctx context.Context, pod *apiv1.Pod) {
-	woc.log.WithField("podName", pod.Name).Info(ctx, "Queueing pod for deletion due to auto-restart")
-	woc.controller.PodController.DeletePod(ctx, pod.Namespace, pod.Name)
 }
 
 func (woc *wfOperationCtx) createPVCs(ctx context.Context) error {
