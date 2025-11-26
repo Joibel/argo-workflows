@@ -64,20 +64,35 @@ spec:
 			// The patch simulates what happens when a pod is evicted:
 			// - Phase becomes Failed
 			// - Reason is set to "Evicted"
-			// - Message describes the eviction cause
+			// - Message describes the eviction cause (this causes inferFailedReason to return early)
+			// - Init containers show terminated state (evicted before completing)
 			// - Main container never entered Running state (still in Waiting)
 			patch := map[string]interface{}{
 				"status": map[string]interface{}{
 					"phase":   "Failed",
 					"reason":  "Evicted",
 					"message": "The node had condition: [DiskPressure]",
+					"initContainerStatuses": []map[string]interface{}{
+						{
+							"name":  "delay",
+							"image": "alpine:latest",
+							"state": map[string]interface{}{
+								"terminated": map[string]interface{}{
+									"exitCode": 137,
+									"reason":   "Error",
+								},
+							},
+							"ready":        false,
+							"restartCount": 0,
+						},
+					},
 					"containerStatuses": []map[string]interface{}{
 						{
 							"name":  "main",
 							"image": "alpine:latest",
 							"state": map[string]interface{}{
 								"waiting": map[string]interface{}{
-									"reason": "ContainerCreating",
+									"reason": "PodInitializing",
 								},
 							},
 							"ready":        false,
