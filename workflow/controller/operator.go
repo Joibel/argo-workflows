@@ -1786,19 +1786,11 @@ func (woc *wfOperationCtx) shouldAutoRestartPod(ctx context.Context, pod *apiv1.
 	return true
 }
 
-// queuePodForDeletion marks a pod for deletion. The pod will be deleted by the controller
-// after the node status is updated, allowing a new pod to be created.
+// queuePodForDeletion queues a pod for deletion via the pod controller's cleanup queue.
+// This ensures finalizers are properly handled before deletion.
 func (woc *wfOperationCtx) queuePodForDeletion(ctx context.Context, pod *apiv1.Pod) {
 	woc.log.WithField("podName", pod.Name).Info(ctx, "Queueing pod for deletion due to auto-restart")
-
-	// Delete the pod - using background propagation policy to ensure immediate deletion
-	propagation := metav1.DeletePropagationBackground
-	err := woc.controller.kubeclientset.CoreV1().Pods(pod.Namespace).Delete(ctx, pod.Name, metav1.DeleteOptions{
-		PropagationPolicy: &propagation,
-	})
-	if err != nil && !apierr.IsNotFound(err) {
-		woc.log.WithError(err).WithField("podName", pod.Name).Warn(ctx, "Failed to delete pod for auto-restart")
-	}
+	woc.controller.PodController.DeletePod(ctx, pod.Namespace, pod.Name)
 }
 
 func (woc *wfOperationCtx) createPVCs(ctx context.Context) error {
