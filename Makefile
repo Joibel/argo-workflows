@@ -353,8 +353,8 @@ argoexec-nonroot-image:
 codegen: types swagger manifests $(TOOL_MOCKERY) $(GENERATED_DOCS) ## Generate code via `go generate`, as well as SDKs
 	go generate ./...
 	$(TOOL_MOCKERY) --config .mockery.yaml
- 	# The generated markdown contains links to nowhere for interfaces, so remove them
-	sed -i.bak 's/\[interface{}\](#interface)/`interface{}`/g' docs/executor_swagger.md && rm -f docs/executor_swagger.md.bak
+ 	# Clean up kubebuilder annotations and convert to human-readable validation section
+	python3 hack/docgen/clean_swagger_md.py docs/executor_swagger.md
 	make --directory sdks/java USE_NIX=$(USE_NIX) generate
 	make --directory sdks/python USE_NIX=$(USE_NIX) generate
 
