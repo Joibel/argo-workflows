@@ -269,12 +269,12 @@ def main():
 
     filepath = sys.argv[1]
 
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
 
     processed = process_markdown(content)
 
-    with open(filepath, 'w') as f:
+    with open(filepath, 'w', encoding='utf-8') as f:
         f.write(processed)
 
     print(f"Processed {filepath}")
