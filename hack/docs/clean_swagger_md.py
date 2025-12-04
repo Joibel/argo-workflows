@@ -60,8 +60,8 @@ def parse_annotations(text):
     for key, validator in validation_fields:
         text, annotations[key] = extract_and_remove(
             text,
-            rf'\+kubebuilder:validation:{validator}=(\d+)',
-            rf'\+kubebuilder:validation:{validator}=\d+')
+            rf'\+kubebuilder:validation:{validator}=([+-]?\d+)',
+            rf'\+kubebuilder:validation:{validator}=[+-]?\d+')
 
     # +kubebuilder:validation:Pattern=`X`
     text, annotations['pattern'] = extract_and_remove(
