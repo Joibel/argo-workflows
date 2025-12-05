@@ -103,15 +103,13 @@ def build_validation_section(annotations):
 
     if annotations.get('optional'):
         parts.append('Optional')
-    if annotations.get('required'):
-        parts.append('Required')
 
     # Fields with labels
     labeled_fields = [
-        ('default', 'Default'),
-        ('enum_values', 'Valid values'),
-        ('minimum', 'Minimum'),
-        ('maximum', 'Maximum'),
+        ('default', 'Default value'),
+        ('enum_values', 'Allowed values'),
+        ('minimum', 'Minimum value'),
+        ('maximum', 'Maximum value'),
         ('min_length', 'Minimum length'),
         ('max_length', 'Maximum length'),
         ('min_items', 'Minimum items'),
@@ -122,12 +120,12 @@ def build_validation_section(annotations):
             parts.append(f"{label}: {annotations[key]}")
 
     if annotations.get('pattern'):
-        parts.append(f"Pattern: `{annotations['pattern']}`")
+        parts.append(f"Validation regex: `{annotations['pattern']}`")
 
     if not parts:
         return ''
 
-    return '</br>**Validation:** ' + '; '.join(parts) + '.'
+    return '</br>*' + '; '.join(parts) + '.*'
 
 
 def process_table_cell(cell):
