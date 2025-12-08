@@ -23,7 +23,6 @@ permissions:
 jobs:
   build-linux:
     name: Build & push linux
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: ubuntu-24.04
     strategy:
       matrix:
@@ -100,7 +99,6 @@ jobs:
 
   build-windows:
     name: Build & push windows
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -147,7 +145,6 @@ jobs:
 
   push-images:
     name: Push manifest with all images
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: ubuntu-24.04
     needs: [ build-linux, build-windows ]
     steps:
@@ -208,7 +205,6 @@ jobs:
 
   test-images-linux-amd64:
     name: Try pulling linux/amd64
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: ubuntu-24.04
     needs: [ push-images ]
     strategy:
@@ -249,7 +245,6 @@ jobs:
 
   test-images-windows:
     name: Try pulling windows
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: windows-2022
     needs: [ push-images ]
     steps:
@@ -283,7 +278,6 @@ jobs:
 
   build-ui:
     name: Build UI
-    if: github.repository == 'argoproj/argo-workflows'
     runs-on: ubuntu-24.04
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -309,7 +303,6 @@ jobs:
 
   build-clis:
     name: Build CLI ${{ matrix.goos }}-${{ matrix.goarch }}
-    if: github.repository == 'argoproj/argo-workflows'
     needs: [ build-ui ]
     runs-on: ubuntu-24.04
     strategy:
@@ -367,7 +360,6 @@ jobs:
     permissions:
       contents: write  # for softprops/action-gh-release to create GitHub release
     runs-on: ubuntu-24.04
-    if: github.repository == 'argoproj/argo-workflows'
     needs: [ push-images, test-images-linux-amd64, test-images-windows, build-clis ]
     env:
       NODE_OPTIONS: --max-old-space-size=4096
