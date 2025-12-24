@@ -14,6 +14,8 @@ var funcMap = template.FuncMap{
 }
 
 var fileHeaderTmpl = template.Must(template.New("header").Parse(`{{.Banner}}
+//
+//go:generate go run ./builder --metricsHelpersGo {{.Filename}}
 package telemetry
 
 import (
@@ -78,7 +80,7 @@ func writeMetricsHelpersGo(filename string, metrics *metricsList, attributes *at
 	defer f.Close()
 
 	// Write file header
-	fileHeaderTmpl.Execute(f, map[string]string{"Banner": generatedBanner})
+	fileHeaderTmpl.Execute(f, map[string]string{"Banner": generatedBanner, "Filename": filename})
 
 	// Generate option types and functions for metrics with optional attributes
 	generatedOptions := make(map[string]bool)
