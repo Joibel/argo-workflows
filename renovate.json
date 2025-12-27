@@ -3,7 +3,4 @@
   "nix": {
     "enabled": true
   },
-  "includePaths": [
-    "**/dev/nix/flake.nix"
-  ]
 }
