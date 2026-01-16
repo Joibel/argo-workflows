@@ -244,6 +244,17 @@ Metrics for the [Four Golden Signals](https://sre.google/sre-book/monitoring-dis
 
 <!-- Generated documentation BEGIN -->
 
+#### `client_rate_limiter_latency`
+
+A histogram of the time spent waiting for the client-side rate limiter.
+Records the actual wait time spent blocking on the client-go rate limiter before
+Kubernetes API requests can proceed. This metric helps identify when the client
+rate limiter (configured via QPS and Burst settings) is causing delays in API calls.
+This rate limiter is on by default.
+
+This metric has no attributes.
+
+Default bucket sizes: 0.1, 0.5, 1, 5, 10, 30, 60, 180
 #### `cronworkflows_concurrencypolicy_triggered`
 
 A counter of the number of times a CronWorkflow has triggered its `concurrencyPolicy` to limit the number of workflows running.
@@ -435,6 +446,7 @@ The rate of this shows how busy that area of the controller is
 |--------------|-----------------------|
 | `queue_name` | The name of the queue |
 
+Default bucket sizes: 1, 5, 10, 20, 30, 60, 180
 Queues:
 
 - `cron_wf_queue`: the queue of CronWorkflow updates from the cluster
@@ -556,6 +568,18 @@ Queues:
 
 This and associated metrics are all directly sourced from the [client-go workqueue metrics](https://godocs.io/k8s.io/client-go/util/workqueue)
 
+#### `resource_rate_limiter_latency`
+
+A histogram of the delay duration from the resource creation rate limiter.
+Records the delay that would be required before a resource creation operation could proceed.
+This metric helps identify when the resource rate limiter is throttling pod creation.
+A delay of 0 means the operation was allowed immediately. A non-zero delay indicates
+the operation was rate limited.
+This rate limiter is not on by default
+
+This metric has no attributes.
+
+Default bucket sizes: 0.1, 0.5, 1, 5, 10, 30, 60, 180
 #### `total_count`
 
 A counter of workflows that have entered each phase for tracking them through their life-cycle, by namespace.

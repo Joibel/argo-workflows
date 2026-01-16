@@ -550,7 +550,11 @@ func (woc *wfOperationCtx) createWorkflowPod(ctx context.Context, nodeName strin
 		pod.Spec.ActiveDeadlineSeconds = &newActiveDeadlineSeconds
 	}
 
-	if !woc.controller.rateLimiter.Allow() {
+	reservation := woc.controller.rateLimiter.Reserve()
+	delay := reservation.Delay()
+	woc.controller.metrics.RecordResourceRateLimiterLatency(ctx, delay.Seconds())
+	if delay > 0 {
+		reservation.Cancel()
 		return nil, ErrResourceRateLimitReached
 	}
 
