@@ -90,6 +90,31 @@ func (mb *MetricBaseline) ExpectIncrease() {
 	}
 }
 
+// ExpectAtLeastIncrease checks that the metrics have increased by at least the amounts
+// specified in the map passed to CaptureBaseline(). This is useful for metrics where
+// the exact increase is not known, but we expect at least a minimum increase.
+func (mb *MetricBaseline) ExpectAtLeastIncrease() {
+	mb.t.Helper()
+
+	if len(mb.expectedIncreases) == 0 {
+		mb.t.Fatal("No expected increases stored. Call CaptureBaseline() first.")
+	}
+
+	currentValues := mb.getCurrentMetricValues(mb.expectedIncreases)
+
+	for metric, minExpectedIncrease := range mb.expectedIncreases {
+		baseline := mb.baselines[metric] // defaults to 0 if not found
+		currentValue := currentValues[metric]
+		actualIncrease := currentValue - baseline
+
+		mb.t.Logf("Metric %s: baseline=%f, current=%f, min_expected_increase=%f, actual_increase=%f",
+			metric, baseline, currentValue, minExpectedIncrease, actualIncrease)
+
+		assert.GreaterOrEqual(mb.t, actualIncrease, minExpectedIncrease,
+			"Expected %s to increase by at least %f, but it increased by %f (from %f to %f)", metric, minExpectedIncrease, actualIncrease, baseline, currentValue)
+	}
+}
+
 // parseMetricValue extracts the numeric value from a prometheus metric line
 // Returns 0 if the metric is not found
 func parseMetricValue(body, metricPattern string) float64 {

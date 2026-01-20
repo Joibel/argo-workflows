@@ -280,17 +280,29 @@ func (s *MetricsSuite) TestClusterTemplateMetrics() {
 }
 
 func (s *MetricsSuite) TestClientRateLimiterLatencyMetric() {
-	s.Run("ClientRateLimiterLatency", func() {
-		// The client_rate_limiter_latency histogram should be recorded on every K8s API request.
-		// We check for the _count metric which indicates the number of observations.
-		// Running a workflow triggers multiple K8s API calls (create workflow, watch, get pods, etc.)
-		s.e(s.T()).GET("").
-			Expect().
-			Status(200).
-			Body().
-			Contains(`HELP argo_workflows_client_rate_limiter_latency`).
-			Contains(`client_rate_limiter_latency_count`)
-	})
+	// The client_rate_limiter_latency histogram is recorded on every K8s API request.
+	// We check that running a workflow increases the _count metric.
+	// We use ExpectAtLeastIncrease since we don't know the exact number of API calls,
+	// but we know running a workflow triggers multiple K8s API calls.
+	expectedIncreases := map[string]float64{
+		`client_rate_limiter_latency_count`: 1, // At least 1 API call
+	}
+
+	// Capture baseline metrics
+	baseline := s.captureBaseline(expectedIncreases)
+
+	s.Given().
+		Workflow(`@testdata/basic-workflow.yaml`).
+		When().
+		SubmitWorkflow().
+		WaitForWorkflow(fixtures.ToBeSucceeded).
+		Then().
+		ExpectWorkflow(func(t *testing.T, metadata *metav1.ObjectMeta, status *wfv1.WorkflowStatus) {
+			assert.Equal(t, wfv1.WorkflowSucceeded, status.Phase)
+
+			// Check that the client rate limiter latency metric increased by at least 1
+			baseline.ExpectAtLeastIncrease()
+		})
 }
 
 func (s *MetricsSuite) TestResourceRateLimiterLatencyMetric() {
