@@ -66,39 +66,37 @@ func AddMetricsTransportWrapper(ctx context.Context, config *rest.Config) *rest.
 
 // instrumentedFlowControlRateLimiter wraps a flowcontrol.RateLimiter and records the wait time
 type instrumentedFlowControlRateLimiter struct {
-	rateLimiter                    flowcontrol.RateLimiter
-	recordClientRateLimiterLatency func(ctx context.Context, val float64)
-	//nolint:containedctx
-	ctx context.Context
+	rateLimiter *metricsRoundTripperContext
+	inner       flowcontrol.RateLimiter
 }
 
 func (r *instrumentedFlowControlRateLimiter) Accept() {
 	startTime := time.Now()
-	r.rateLimiter.Accept()
+	r.inner.Accept()
 	waitTime := time.Since(startTime)
-	if r.recordClientRateLimiterLatency != nil {
-		r.recordClientRateLimiterLatency(r.ctx, waitTime.Seconds())
+	if r.rateLimiter.recordClientRateLimiterLatency != nil {
+		r.rateLimiter.recordClientRateLimiterLatency(r.rateLimiter.ctx, waitTime.Seconds())
 	}
 }
 
 func (r *instrumentedFlowControlRateLimiter) TryAccept() bool {
-	return r.rateLimiter.TryAccept()
+	return r.inner.TryAccept()
 }
 
 func (r *instrumentedFlowControlRateLimiter) Stop() {
-	r.rateLimiter.Stop()
+	r.inner.Stop()
 }
 
 func (r *instrumentedFlowControlRateLimiter) QPS() float32 {
-	return r.rateLimiter.QPS()
+	return r.inner.QPS()
 }
 
 func (r *instrumentedFlowControlRateLimiter) Wait(ctx context.Context) error {
 	startTime := time.Now()
-	err := r.rateLimiter.Wait(ctx)
+	err := r.inner.Wait(ctx)
 	waitTime := time.Since(startTime)
-	if r.recordClientRateLimiterLatency != nil {
-		r.recordClientRateLimiterLatency(ctx, waitTime.Seconds())
+	if r.rateLimiter.recordClientRateLimiterLatency != nil {
+		r.rateLimiter.recordClientRateLimiterLatency(ctx, waitTime.Seconds())
 	}
 	return err
 }
@@ -127,10 +125,11 @@ func AddRateLimiterWrapper(ctx context.Context, config *rest.Config) *rest.Confi
 			return config
 		}
 	}
+	// Store the context for later use when metrics are initialized
+	k8sMetrics.ctx = ctx
 	config.RateLimiter = &instrumentedFlowControlRateLimiter{
-		rateLimiter:                    config.RateLimiter,
-		recordClientRateLimiterLatency: k8sMetrics.recordClientRateLimiterLatency,
-		ctx:                            ctx,
+		rateLimiter: &k8sMetrics,
+		inner:       config.RateLimiter,
 	}
 	return config
 }
