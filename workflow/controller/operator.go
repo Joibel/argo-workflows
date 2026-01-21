@@ -797,6 +797,11 @@ func (woc *wfOperationCtx) persistUpdates(ctx context.Context) {
 
 	woc.log.WithFields(logging.Fields{"resourceVersion": woc.wf.ResourceVersion, "phase": woc.wf.Status.Phase}).Info(ctx, "Workflow update successful")
 
+	// Record workflow phase change metric only after successful persistence
+	if woc.orig.Status.Phase != woc.wf.Status.Phase {
+		woc.recordWorkflowPhaseChange(ctx)
+	}
+
 	switch os.Getenv("INFORMER_WRITE_BACK") {
 	// this does not reduce errors, but does reduce
 	// conflicts and therefore we log fewer warning messages.
@@ -2585,7 +2590,6 @@ func (woc *wfOperationCtx) markWorkflowPhase(ctx context.Context, phase wfv1.Wor
 		woc.log.WithFields(logging.Fields{"fromPhase": woc.wf.Status.Phase, "toPhase": phase}).Info(ctx, "updated phase")
 		woc.updated = true
 		woc.wf.Status.Phase = phase
-		woc.recordWorkflowPhaseChange(ctx)
 		if woc.wf.Labels == nil {
 			woc.wf.Labels = make(map[string]string)
 		}
