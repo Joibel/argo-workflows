@@ -10,7 +10,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   title-check:
@@ -47,90 +46,17 @@ jobs:
           files: |
             .features/pending/*.md
 
-      - name: Check feature note
-        id: feature-check
+      - name: No ./.features/*.md addition
+        if: steps.changed-files.outputs.added_files_count == 0
         run: |
-          if [[ "${{ steps.changed-files.outputs.added_files_count }}" == "0" ]]; then
-            echo "No feature description was added to the ./.features/ directory for this feature PR."
-            echo "Please add a .md file to the ./.features/ directory."
-            echo "See docs/running-locally.md for more details."
-            echo "passed=false" >> $GITHUB_OUTPUT
-          else
-            echo "A feature description was added to the ./.features/ directory."
-            if make features-validate; then
-              echo "passed=true" >> $GITHUB_OUTPUT
-            else
-              echo "New ./.features/*.md file failed validation."
-              echo "passed=false" >> $GITHUB_OUTPUT
-            fi
-          fi
+          echo "No feature description was added to the ./.features/ directory for this feature PR."
+          echo "Please add a .md file to the ./.features/ directory."
+          echo "See docs/running-locally.md for more details."
+          false
 
-      - name: Add needs/feature-note label
-        if: steps.feature-check.outputs.passed == 'false'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "needs/feature-note"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove needs/feature-note label
-        if: steps.feature-check.outputs.passed == 'true'
+      - name: Validate ./.features/*.md changes
+        if: steps.changed-files.outputs.added_files_count > 0
         run: |
-          gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs/feature-note" || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Fail if feature note check failed
-        if: steps.feature-check.outputs.passed == 'false'
-        run: exit 1
-
-  dco-check:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-
-      - name: Check DCO
-        id: dco
-        run: |
-          # Get the base commit of the PR
-          BASE_SHA=${{ github.event.pull_request.base.sha }}
-          HEAD_SHA=${{ github.event.pull_request.head.sha }}
-
-          # Check all commits in the PR for DCO sign-off
-          failed=false
-          for commit in $(git rev-list $BASE_SHA..$HEAD_SHA); do
-            message=$(git log --format=%B -n 1 $commit)
-            if ! echo "$message" | grep -qE '^Signed-off-by: .+ <.+>$'; then
-              echo "Commit $commit is missing DCO sign-off"
-              failed=true
-            fi
-          done
-
-          if [ "$failed" = "true" ]; then
-            echo "passed=false" >> $GITHUB_OUTPUT
-          else
-            echo "passed=true" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Add needs/dco label
-        if: steps.dco.outputs.passed == 'false'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "needs/dco"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove needs/dco label
-        if: steps.dco.outputs.passed == 'true'
-        run: |
-          gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs/dco" || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Fail if DCO check failed
-        if: steps.dco.outputs.passed == 'false'
-        run: |
-          echo "One or more commits are missing the DCO sign-off."
-          echo "Please sign off your commits with 'git commit -s' or amend with 'git commit --amend -s'."
-          echo "See https://github.com/apps/dco/ for more information."
-          exit 1
+          echo "A feature description was added to the ./.features/ directory."
+          make features-validate \
+            || { echo "New ./.features/*.md file failed validation."; exit 1; }

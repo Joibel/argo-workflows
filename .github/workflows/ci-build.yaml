@@ -16,7 +16,6 @@ concurrency:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   changed-files:
@@ -484,30 +483,7 @@ jobs:
       - run: make codegen -B STATIC_FILES=false
       # if codegen makes changes that are not in the PR, fail the build
       - name: Check if codegen made changes not present in the PR
-        id: codegen-diff
-        run: |
-          if git diff --exit-code; then
-            echo "passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "passed=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Add needs/codegen label
-        if: github.event_name == 'pull_request' && steps.codegen-diff.outputs.passed == 'false'
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "needs/codegen"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove needs/codegen label
-        if: github.event_name == 'pull_request' && steps.codegen-diff.outputs.passed == 'true'
-        run: |
-          gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs/codegen" || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Fail if codegen made changes
-        if: steps.codegen-diff.outputs.passed == 'false'
-        run: exit 1
+        run: git diff --exit-code
 
   lint:
     name: Lint
@@ -523,44 +499,13 @@ jobs:
         with:
           go-version: "1.25"
           cache: true
-      - name: Run lint
-        id: lint
-        run: |
-          if make lint STATIC_FILES=false; then
-            echo "passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "passed=false" >> $GITHUB_OUTPUT
-          fi
+      - run: make lint STATIC_FILES=false
       # if lint makes changes that are not in the PR, fail the build
       - name: Check if lint made changes not present in the PR
-        id: lint-diff
-        run: |
-          if git diff --exit-code; then
-            echo "passed=true" >> $GITHUB_OUTPUT
-          else
-            echo "passed=false" >> $GITHUB_OUTPUT
-          fi
+        run: git diff --exit-code
       # lint GH Actions
       - name: Ensure GH Actions are pinned to SHAs
-        id: sha-pinned
         uses: zgosalvez/github-actions-ensure-sha-pinned-actions@ba37328d4ea95eaf8b3bd6c6cef308f709a5f2ec # v3.0.3
-
-      - name: Add needs/lint label
-        if: github.event_name == 'pull_request' && (steps.lint.outputs.passed == 'false' || steps.lint-diff.outputs.passed == 'false')
-        run: gh pr edit ${{ github.event.pull_request.number }} --add-label "needs/lint"
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Remove needs/lint label
-        if: github.event_name == 'pull_request' && steps.lint.outputs.passed == 'true' && steps.lint-diff.outputs.passed == 'true'
-        run: |
-          gh pr edit ${{ github.event.pull_request.number }} --remove-label "needs/lint" || true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Fail if lint checks failed
-        if: steps.lint.outputs.passed == 'false' || steps.lint-diff.outputs.passed == 'false'
-        run: exit 1
 
   ui:
     name: UI
