@@ -12,6 +12,30 @@
   "nix": {
     "enabled": true
   },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update minimum tested Kubernetes version in k8s-versions.sh",
+      "fileMatch": ["^hack/k8s-versions\\.sh$"],
+      "matchStrings": ["\\[min\\]=v(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "k8s-versions-min",
+      "packageNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Update maximum tested Kubernetes version in k8s-versions.sh",
+      "fileMatch": ["^hack/k8s-versions\\.sh$"],
+      "matchStrings": ["\\[max\\]=v(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "k8s-versions-max",
+      "packageNameTemplate": "kubernetes/kubernetes",
+      "datasourceTemplate": "github-releases",
+      "extractVersionTemplate": "^v(?<version>.*)$",
+      "versioningTemplate": "semver"
+    }
+  ],
   "packageRules": [
     {
       "description": "Disable argo updates (maintained separately)",
@@ -62,6 +86,37 @@
         "lockFileMaintenance"
       ],
       "enabled": false
+    },
+    {
+      "description": "K8s versions: only update on main",
+      "matchDepNames": [
+        "k8s-versions-min",
+        "k8s-versions-max"
+      ],
+      "matchBaseBranches": [
+        "release-3.7",
+        "release-4.0"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "K8s min version: only allow patch updates (bump minor manually when oldest supported K8s changes)",
+      "matchDepNames": [
+        "k8s-versions-min"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Group K8s version updates together",
+      "matchDepNames": [
+        "k8s-versions-min",
+        "k8s-versions-max"
+      ],
+      "groupName": "k8s-versions"
     }
   ],
   "platformAutomerge": true,
