@@ -277,10 +277,11 @@ func (s *databaseSemaphore) checkAcquire(ctx context.Context, holderKey string, 
 		}).Info(ctx, "CheckAcquire - limit exceeded")
 		return false, false, waitingMsg
 	}
-	// Check whether requested holdkey is in front of priority queue.
-	// If it is in front position, it will allow to acquire lock.
-	// If it is not a front key, it needs to wait for its turn.
-	// Only live controllers are considered
+	// Check whether the requested holdkey is first among this controller's
+	// items in the priority queue. Items from other controllers are skipped
+	// because each controller independently processes its own workflows.
+	// The database lock (lock table) serializes checkAcquire/acquire across
+	// controllers, so acquire()'s capacity check prevents over-acquisition.
 	queue, err := s.queueOrdered(ctx, *tx.db)
 	if err != nil {
 		logger.WithFields(logging.Fields{
@@ -291,36 +292,35 @@ func (s *databaseSemaphore) checkAcquire(ctx context.Context, holderKey string, 
 		}).Info(ctx, "CheckAcquire failed")
 		return false, false, err.Error()
 	}
-	if len(queue) == 0 {
+	// Find the first item in the queue that belongs to this controller.
+	// Items from other controllers are skipped because each controller
+	// independently manages its own workflows.
+	var firstOurs *syncdb.StateRecord
+	for i := range queue {
+		if queue[i].Controller == s.info.Config.ControllerName {
+			firstOurs = &queue[i]
+			break
+		}
+	}
+	if firstOurs == nil {
 		logger.WithFields(logging.Fields{
 			"key":          holderKey,
 			"result":       false,
 			"already_held": false,
-		}).Info(ctx, "CheckAcquire - empty queue")
+		}).Info(ctx, "CheckAcquire - no items from this controller in queue")
 		return false, false, ""
 	}
-	if queue[0].Controller != s.info.Config.ControllerName {
-		logger.WithFields(logging.Fields{
-			"key":                holderKey,
-			"result":             false,
-			"already_held":       false,
-			"message":            waitingMsg,
-			"queue_controller":   queue[0].Controller,
-			"current_controller": s.info.Config.ControllerName,
-		}).Info(ctx, "CheckAcquire - different controller")
-		return false, false, waitingMsg
-	}
-	if !isSameWorkflowNodeKeys(holderKey, queue[0].Key) {
-		// Enqueue the queue[0] workflow if lock is available
+	if !isSameWorkflowNodeKeys(holderKey, firstOurs.Key) {
+		// Enqueue the first workflow from our controller if lock is available
 		if len(holders) < limit {
-			s.nextWorkflow(queue[0].Key)
+			s.nextWorkflow(firstOurs.Key)
 		}
 		logger.WithFields(logging.Fields{
 			"key":          holderKey,
 			"result":       false,
 			"already_held": false,
 			"message":      waitingMsg,
-			"queue_key":    queue[0].Key,
+			"queue_key":    firstOurs.Key,
 		}).Info(ctx, "CheckAcquire - not first in queue")
 		return false, false, waitingMsg
 	}
