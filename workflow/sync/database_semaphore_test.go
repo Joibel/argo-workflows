@@ -280,6 +280,68 @@ func TestMutexAndSemaphoreWithSameName(t *testing.T) {
 	}
 }
 
+// TestNotifyWaitersSkipsOtherControllers tests that notifyWaiters correctly
+// notifies workflows belonging to this controller even when other controllers'
+// items appear earlier in the pending queue.
+func TestNotifyWaitersSkipsOtherControllers(t *testing.T) {
+	ctx := logging.TestContext(t.Context())
+	for _, dbType := range testDBTypes {
+		t.Run(string(dbType), func(t *testing.T) {
+			// Track which workflows were notified
+			notifiedWorkflows := []string{}
+			nextWorkflow := func(key string) {
+				notifiedWorkflows = append(notifiedWorkflows, key)
+			}
+
+			// Create a semaphore with limit 2 and 1 holder, so 1 slot is free
+			s, info, deferfunc := createTestDatabaseSemaphore(ctx, t, "bar", "foo", 2, 0, nextWorkflow, dbType)
+			defer deferfunc()
+
+			// Acquire one slot so only 1 is free
+			tx := &transaction{db: &info.Session}
+			now := time.Now()
+			require.NoError(t, s.addToQueue(ctx, "foo/holder-wf", 0, now))
+			acquired, _ := s.tryAcquire(ctx, "foo/holder-wf", tx)
+			require.True(t, acquired)
+
+			// Register another controller
+			otherController := "controller-2"
+			_, err := info.Session.Collection(info.Config.ControllerTable).
+				Insert(&syncdb.ControllerHealthRecord{
+					Controller: otherController,
+					Time:       time.Now(),
+				})
+			require.NoError(t, err)
+
+			// Add 2 pending items from the other controller (earlier timestamps = higher queue priority)
+			for i, key := range []string{"foo/other-wf-01", "foo/other-wf-02"} {
+				_, err = info.Session.Collection(info.Config.StateTable).
+					Insert(&syncdb.StateRecord{
+						Name:       s.longDBKey(),
+						Key:        key,
+						Controller: otherController,
+						Held:       false,
+						Time:       now.Add(time.Duration(i+1) * time.Second),
+					})
+				require.NoError(t, err)
+			}
+
+			// Add our workflow after the other controller's items
+			require.NoError(t, s.addToQueue(ctx, "foo/our-wf-01", 0, now.Add(3*time.Second)))
+
+			// Clear any notifications from setup
+			notifiedWorkflows = nil
+
+			// Call notifyWaiters - our workflow should be notified despite being
+			// behind other controller's items in the queue
+			s.notifyWaiters(ctx)
+
+			assert.Contains(t, notifiedWorkflows, "foo/our-wf-01",
+				"Our workflow should be notified even when other controllers' items are ahead in the queue")
+		})
+	}
+}
+
 // TestSyncLimitCacheDB tests the caching of semaphore limit values in database semaphores
 func TestSyncLimitCacheDB(t *testing.T) {
 	ctx := logging.TestContext(t.Context())

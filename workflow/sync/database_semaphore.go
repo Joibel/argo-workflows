@@ -192,14 +192,18 @@ func (s *databaseSemaphore) notifyWaiters(ctx context.Context) {
 		"triggerCount": triggerCount,
 		"pendingCount": len(pending),
 	}).Debug(ctx, "Notifying waiters for semaphore")
-	for idx := range triggerCount {
-		item := pending[idx]
+	notified := 0
+	for _, item := range pending {
+		if notified >= triggerCount {
+			break
+		}
 		if item.Controller != s.info.Config.ControllerName {
 			continue
 		}
 		key := workflowKey(item.Key)
 		logger.WithFields(logging.Fields{"key": item.Key, "workflowKey": key}).Debug(ctx, "Enqueueing workflow for semaphore notification")
 		s.nextWorkflow(key)
+		notified++
 	}
 }
 
