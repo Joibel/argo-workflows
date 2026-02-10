@@ -71,9 +71,7 @@ func TestInactiveControllerDBSemaphore(t *testing.T) {
 	}
 }
 
-// TestOtherControllerDBSemaphore tests semaphore behavior when items from other controllers are in the queue.
-// Each controller independently processes its own workflows. Items from other controllers
-// in the queue should not block acquisition when there is available capacity.
+// TestOtherControllerDBSemaphore tests semaphore behavior when items from other controllers are in the queue
 func TestOtherControllerDBSemaphore(t *testing.T) {
 	ctx := logging.TestContext(t.Context())
 	for _, dbType := range testDBTypes {
@@ -109,12 +107,22 @@ func TestOtherControllerDBSemaphore(t *testing.T) {
 			now := time.Now()
 			require.NoError(t, s.addToQueue(ctx, "foo/our-wf-01", 0, now.Add(time.Second)))
 
-			// Try to acquire - this should succeed because each controller processes
-			// its own items independently. The database lock serializes acquisition
-			// and acquire() checks capacity, preventing over-acquisition.
+			// Try to acquire - this should fail because the other controller's item is first in line
 			tx := &transaction{db: &info.Session}
 			acquired, _ := s.tryAcquire(ctx, "foo/our-wf-01", tx)
-			assert.True(t, acquired, "Semaphore should be acquired: other controllers' pending items don't block ours")
+			assert.False(t, acquired, "Semaphore should not be acquired when another controller's item is first in queue")
+
+			// Now mark the other controller as inactive by setting its timestamp to be old
+			staleTime := time.Now().Add(-info.Config.InactiveControllerTimeout * 2)
+			_, err = info.Session.SQL().Update(info.Config.ControllerTable).
+				Set("time", staleTime).
+				Where(db.Cond{"controller": otherController}).
+				Exec()
+			require.NoError(t, err)
+
+			// Try again - now it should work because the other controller is considered inactive
+			acquired, _ = s.tryAcquire(ctx, "foo/our-wf-01", tx)
+			assert.True(t, acquired, "Semaphore should be acquired when other controller is marked as inactive")
 
 			// Verify the semaphore is now held by our workflow
 			holders, err := s.getCurrentHolders(ctx)
