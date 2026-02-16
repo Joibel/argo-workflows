@@ -251,23 +251,6 @@ func (t *Tracing) StartPatchTaskResult(ctx context.Context) (context.Context, tr
 	return t.tracer.Start(ctx, "patchTaskResult", trace.WithSpanKind(trace.SpanKindInternal))
 }
 
-var SpanPatchTaskResultLabels = Span{
-	name: "patchTaskResultLabels",
-}
-
-// StartPatchTaskResultLabels starts a patch_task_result_labels span
-func (t *Tracing) StartPatchTaskResultLabels(ctx context.Context) (context.Context, trace.Span) {
-	parent := trace.SpanFromContext(ctx)
-	if roParent, ok := parent.(sdktrace.ReadOnlySpan); ok {
-		parentName := roParent.Name()
-		if parentName != "runWaitContainer" && parentName != "runMainContainer" {
-			logging.RequireLoggerFromContext(ctx).WithFields(logging.Fields{"startMethod": "StartPatchTaskResultLabels", "expectedParents": "runWaitContainer, runMainContainer", "actualParent": parentName}).Error(ctx, "incorrect trace parentage")
-		}
-	}
-
-	return t.tracer.Start(ctx, "patchTaskResultLabels", trace.WithSpanKind(trace.SpanKindInternal))
-}
-
 var SpanPersistUpdates = Span{
 	name: "persistUpdates",
 }
@@ -416,7 +399,7 @@ func (t *Tracing) StartRunInitContainer(ctx context.Context, workflowName string
 
 var SpanRunMainContainer = Span{
 	name:     "runMainContainer",
-	children: []*Span{&SpanCreateTaskResult, &SpanPatchTaskResult, &SpanPatchTaskResultLabels, &SpanProcessDataTemplate},
+	children: []*Span{&SpanCreateTaskResult, &SpanPatchTaskResult, &SpanProcessDataTemplate},
 	attributes: []BuiltinAttribute{
 		{
 			name: AttribWorkflowName,
@@ -446,7 +429,7 @@ func (t *Tracing) StartRunMainContainer(ctx context.Context, workflowName string
 
 var SpanRunWaitContainer = Span{
 	name:     "runWaitContainer",
-	children: []*Span{&SpanCaptureScriptResult, &SpanCreateTaskResult, &SpanPatchTaskResult, &SpanPatchTaskResultLabels, &SpanSaveArtifacts, &SpanSaveLogs, &SpanWaitWorkload},
+	children: []*Span{&SpanCaptureScriptResult, &SpanCreateTaskResult, &SpanPatchTaskResult, &SpanSaveArtifacts, &SpanSaveLogs, &SpanWaitWorkload},
 	attributes: []BuiltinAttribute{
 		{
 			name: AttribWorkflowName,

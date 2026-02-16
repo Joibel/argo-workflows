@@ -536,9 +536,6 @@ spans:
   - name: PatchTaskResult
     description: Patching the WorkflowTaskResult
     parents: [RunWaitContainer, RunMainContainer]
-  - name: PatchTaskResultLabels
-    description: Patching the labels of WorkflowTaskResult
-    parents: [RunWaitContainer, RunMainContainer]
   - name: PersistUpdates
     description: Persisting workflow status updates to Kubernetes
     parents: [Workflow]

@@ -87,6 +87,8 @@ type WorkflowExecutor struct {
 
 	// flag to indicate if the task result was created
 	taskResultCreated bool
+	// flag to indicate if the output finalize labels have already been applied
+	outputFinalized bool
 }
 
 type Initializer interface {
@@ -886,29 +888,14 @@ func (we *WorkflowExecutor) CaptureScriptResult(ctx context.Context) error {
 	return nil
 }
 
-// FinalizeOutput adds a label or annotation to denote that outputs have completed reporting.
+// FinalizeOutput adds a label to denote that outputs have completed reporting.
+// If the label was already applied by ReportOutputs or ReportOutputsLogs, this is a no-op.
 func (we *WorkflowExecutor) FinalizeOutput(ctx context.Context) {
-	logger := logging.RequireLoggerFromContext(ctx)
-	var count uint64
-	err := retryutil.OnError(wait.Backoff{
-		Duration: time.Second,
-		Factor:   2,
-		Jitter:   0.1,
-		Steps:    math.MaxInt32, // effectively infinite retries
-		Cap:      30 * time.Second,
-	}, func(err error) bool {
-		return errorsutil.IsTransientErr(ctx, err)
-	}, func() error {
-		err := we.patchTaskResultLabels(ctx, map[string]string{
-			common.LabelKeyReportOutputsCompleted: "true",
-		})
-		if apierr.IsForbidden(err) || apierr.IsNotFound(err) {
-			logger.WithError(err).WithField("attempt", count).Warn(ctx, "failed to patch task result, see https://argo-workflows.readthedocs.io/en/latest/workflow-rbac/")
-		} else if err != nil && count%20 == 0 {
-			logger.WithError(err).WithField("attempt", count).Warn(ctx, "failed to patch task result")
-		}
-		count++
-		return err
+	if we.outputFinalized {
+		return
+	}
+	err := we.reportResult(ctx, wfv1.NodeResult{}, map[string]string{
+		common.LabelKeyReportOutputsCompleted: "true",
 	})
 	if err != nil {
 		we.AddError(ctx, err)
@@ -927,7 +914,7 @@ func (we *WorkflowExecutor) InitializeOutput(ctx context.Context) {
 	}, func(err error) bool {
 		return errorsutil.IsTransientErr(ctx, err)
 	}, func() error {
-		err := we.upsertTaskResult(ctx, wfv1.NodeResult{})
+		err := we.upsertTaskResult(ctx, wfv1.NodeResult{}, nil)
 		if apierr.IsForbidden(err) {
 			logger.WithError(err).WithField("attempt", count).Warn(ctx, "failed to patch task result, see https://argo-workflows.readthedocs.io/en/latest/workflow-rbac/")
 		} else if err != nil && count%20 == 0 {
@@ -941,27 +928,31 @@ func (we *WorkflowExecutor) InitializeOutput(ctx context.Context) {
 	}
 }
 
-// ReportOutputs updates the WorkflowTaskResult (or falls back to annotate the Pod)
+// ReportOutputs updates the WorkflowTaskResult and marks outputs as completed.
 func (we *WorkflowExecutor) ReportOutputs(ctx context.Context, artifacts []wfv1.Artifact) error {
 	outputs := we.Template.Outputs.DeepCopy()
 	outputs.Artifacts = artifacts
-	return we.reportResult(ctx, wfv1.NodeResult{Outputs: outputs})
+	return we.reportResult(ctx, wfv1.NodeResult{Outputs: outputs}, map[string]string{
+		common.LabelKeyReportOutputsCompleted: "true",
+	})
 }
 
-// ReportOutputsLogs updates the WorkflowTaskResult log fields
+// ReportOutputsLogs updates the WorkflowTaskResult log fields and marks outputs as completed.
 func (we *WorkflowExecutor) ReportOutputsLogs(ctx context.Context) error {
 	var outputs wfv1.Outputs
 	artifacts := wfv1.Artifacts{}
 	logArtifacts := we.SaveLogs(ctx)
 	artifacts = append(artifacts, logArtifacts...)
 	outputs.Artifacts = artifacts
-	return we.reportResult(ctx, wfv1.NodeResult{Outputs: &outputs})
+	return we.reportResult(ctx, wfv1.NodeResult{Outputs: &outputs}, map[string]string{
+		common.LabelKeyReportOutputsCompleted: "true",
+	})
 }
 
-func (we *WorkflowExecutor) reportResult(ctx context.Context, result wfv1.NodeResult) error {
+func (we *WorkflowExecutor) reportResult(ctx context.Context, result wfv1.NodeResult, labels map[string]string) error {
 	var count uint64 // used to avoid spamming with these messages
 	logger := logging.RequireLoggerFromContext(ctx)
-	return retryutil.OnError(wait.Backoff{
+	err := retryutil.OnError(wait.Backoff{
 		Duration: time.Second,
 		Factor:   2.0,
 		Jitter:   0.2,
@@ -970,7 +961,7 @@ func (we *WorkflowExecutor) reportResult(ctx context.Context, result wfv1.NodeRe
 	}, func(err error) bool {
 		return errorsutil.IsTransientErr(ctx, err)
 	}, func() error {
-		err := we.upsertTaskResult(ctx, result)
+		err := we.upsertTaskResult(ctx, result, labels)
 		if apierr.IsForbidden(err) {
 			logger.WithError(err).WithField("attempt", count).Warn(ctx, "failed to patch task result, see https://argo-workflows.readthedocs.io/en/latest/workflow-rbac/")
 		} else if err != nil && count%20 == 0 {
@@ -979,6 +970,10 @@ func (we *WorkflowExecutor) reportResult(ctx context.Context, result wfv1.NodeRe
 		count++
 		return err
 	})
+	if err == nil && len(labels) > 0 {
+		we.outputFinalized = true
+	}
+	return err
 }
 
 // AddError adds an error to the list of encountered errors during execution
@@ -1321,7 +1316,7 @@ func (we *WorkflowExecutor) monitorProgress(ctx context.Context, progressFile st
 			logger.WithError(ctx.Err()).Info(ctx, "stopping progress monitor (context done)")
 			return
 		case <-annotationPatchTicker.C:
-			if err := we.reportResult(ctx, wfv1.NodeResult{Progress: we.progress}); err != nil {
+			if err := we.reportResult(ctx, wfv1.NodeResult{Progress: we.progress}, nil); err != nil {
 				logger.WithError(err).Info(ctx, "failed to report progress")
 			} else {
 				we.progress = ""
