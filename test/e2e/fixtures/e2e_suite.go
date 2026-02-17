@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/argoproj/argo-workflows/v3/util/logging"
@@ -66,6 +69,8 @@ type E2ESuite struct {
 	hydrator          hydrator.Interface
 	testStartedAt     time.Time
 	slowTests         []string
+	controllerPID     int // PID of workflow-controller process, for restart detection
+	serverPID         int // PID of argo server process, for restart detection
 }
 
 func (s *E2ESuite) SetupSuite() {
@@ -88,6 +93,16 @@ func (s *E2ESuite) SetupSuite() {
 	s.Persistence = NewPersistence(ctx, s.KubeClient, s.Config)
 	s.hydrator = hydrator.New(s.Persistence.OffloadNodeStatusRepo)
 	s.cwfTemplateClient = versioned.NewForConfigOrDie(s.RestConfig).ArgoprojV1alpha1().ClusterWorkflowTemplates()
+
+	// Record PIDs for restart detection during tests
+	if pid, err := findPIDByName("workflow-controller"); err == nil {
+		s.controllerPID = pid
+		_, _ = fmt.Printf("Workflow controller PID: %d\n", pid)
+	}
+	if pid, err := findPIDByName("argo"); err == nil {
+		s.serverPID = pid
+		_, _ = fmt.Printf("Argo server PID: %d\n", pid)
+	}
 }
 
 func (s *E2ESuite) TearDownSuite() {
@@ -101,6 +116,9 @@ func (s *E2ESuite) TearDownSuite() {
 }
 
 func (s *E2ESuite) BeforeTest(string, string) {
+	if msg := s.detectProcessRestart(); msg != "" {
+		s.T().Fatal(msg)
+	}
 	start := time.Now()
 	s.DeleteResources()
 	if time.Since(start) > time.Second {
@@ -110,6 +128,11 @@ func (s *E2ESuite) BeforeTest(string, string) {
 }
 
 func (s *E2ESuite) AfterTest(suiteName, testName string) {
+	if msg := s.detectProcessRestart(); msg != "" {
+		_, _ = fmt.Println(color.Ize(color.Red, "=== "+msg))
+		_, _ = fmt.Println(color.Ize(color.Red, "=== FAIL: "+suiteName+"/"+testName+" (process restart detected)"))
+		os.Exit(1)
+	}
 	if s.T().Skipped() { // by default, we don't get good logging at test end
 		_, _ = fmt.Println(color.Ize(color.Gray, "=== SKIP: "+suiteName+"/"+testName))
 	} else if s.T().Failed() { // by default, we don't get good logging at test end
@@ -239,6 +262,44 @@ func (s *E2ESuite) GetServiceAccountToken() (string, error) {
 		return "", err
 	}
 	return string(sec.Data["token"]), nil
+}
+
+// findPIDByName returns the PID of a process with the given exact name.
+func findPIDByName(name string) (int, error) {
+	out, err := exec.Command("pgrep", "-x", name).Output()
+	if err != nil {
+		return 0, fmt.Errorf("process %q not found: %w", name, err)
+	}
+	fields := strings.Fields(strings.TrimSpace(string(out)))
+	if len(fields) == 0 {
+		return 0, fmt.Errorf("process %q not found", name)
+	}
+	return strconv.Atoi(fields[0])
+}
+
+// detectProcessRestart checks whether the workflow controller or argo server
+// processes have restarted since the test suite started. Returns a non-empty
+// error message if a restart or crash is detected.
+func (s *E2ESuite) detectProcessRestart() string {
+	if s.controllerPID != 0 {
+		currentPID, err := findPIDByName("workflow-controller")
+		if err != nil {
+			return fmt.Sprintf("WORKFLOW CONTROLLER CRASHED: was PID %d, process no longer running: %v", s.controllerPID, err)
+		}
+		if currentPID != s.controllerPID {
+			return fmt.Sprintf("WORKFLOW CONTROLLER RESTARTED: PID changed from %d to %d", s.controllerPID, currentPID)
+		}
+	}
+	if s.serverPID != 0 {
+		currentPID, err := findPIDByName("argo")
+		if err != nil {
+			return fmt.Sprintf("ARGO SERVER CRASHED: was PID %d, process no longer running: %v", s.serverPID, err)
+		}
+		if currentPID != s.serverPID {
+			return fmt.Sprintf("ARGO SERVER RESTARTED: PID changed from %d to %d", s.serverPID, currentPID)
+		}
+	}
+	return ""
 }
 
 func (s *E2ESuite) Given() *Given {
