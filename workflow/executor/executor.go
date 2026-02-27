@@ -294,7 +294,7 @@ func (we *WorkflowExecutor) loadArtifact(ctx context.Context, pluginName wfv1.Ar
 	} else if driverArt.Plugin != nil {
 		// For plugin artifacts without explicit mode, ensure the file is writable
 		// by setting mode to 0666 so the main container can read/write it
-		err = chmod(artPath, 0666, art.RecurseMode)
+		err = chmod(artPath, 0o666, art.RecurseMode)
 		if err != nil {
 			logger.WithError(err).Error(ctx, "Failed to chmod plugin artifact")
 			return err

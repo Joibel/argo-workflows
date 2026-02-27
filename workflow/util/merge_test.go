@@ -513,6 +513,7 @@ spec:
       bar:
         expression: PATCH
 `
+
 var baseLabelsFromWF = `
 apiVersion: argoproj.io/v1alpha1
 kind: Workflow

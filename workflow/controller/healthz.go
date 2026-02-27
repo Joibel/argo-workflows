@@ -17,9 +17,7 @@ import (
 	"github.com/argoproj/argo-workflows/v4/workflow/util"
 )
 
-var (
-	age = env.LookupEnvDurationOr(logging.InitLoggerInContext(), "HEALTHZ_AGE", 5*time.Minute)
-)
+var age = env.LookupEnvDurationOr(logging.InitLoggerInContext(), "HEALTHZ_AGE", 5*time.Minute)
 
 func LogMiddleware(logger logging.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

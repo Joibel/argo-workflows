@@ -316,6 +316,7 @@ func TestMutexAndSemaphore(t *testing.T) {
 		assert.True(t, wfUpdate)
 	})
 }
+
 func TestPriority(t *testing.T) {
 	ctx := logging.TestContext(t.Context())
 	kube := fake.NewSimpleClientset()

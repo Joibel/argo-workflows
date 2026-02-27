@@ -11,9 +11,7 @@ import (
 	"github.com/argoproj/argo-workflows/v4/util/logging"
 )
 
-var (
-	extraLongThrottleLatency = 5 * time.Second
-)
+var extraLongThrottleLatency = 5 * time.Second
 
 type k8sLogRoundTripper struct {
 	roundTripper http.RoundTripper

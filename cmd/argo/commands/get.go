@@ -14,7 +14,7 @@ import (
 )
 
 func NewGetCommand() *cobra.Command {
-	var getArgs = common.GetFlags{
+	getArgs := common.GetFlags{
 		Output: common.EnumFlagValue{
 			AllowedValues: []string{"name", "json", "yaml", "short", "wide"},
 		},

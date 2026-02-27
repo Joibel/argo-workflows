@@ -87,7 +87,6 @@ func newOfflineClient(ctx context.Context, paths []string) (context.Context, Cli
 			}
 			return nil
 		})
-
 		if err != nil {
 			return nil, nil, err
 		}

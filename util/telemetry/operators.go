@@ -88,11 +88,13 @@ func (i *Instrument) ObserveFloat(ctx context.Context, o metric.Observer, val fl
 	}
 }
 
-type InstAttribs []InstAttrib
-type InstAttrib struct {
-	Name  string
-	Value any
-}
+type (
+	InstAttribs []InstAttrib
+	InstAttrib  struct {
+		Name  string
+		Value any
+	}
+)
 
 func (i *Instrument) attributes(ctx context.Context, labels Attributes) metric.MeasurementOption {
 	attribs := make([]attribute.KeyValue, 0)

@@ -14,7 +14,7 @@ import (
 )
 
 func NewListCommand() *cobra.Command {
-	var output = common.EnumFlagValue{
+	output := common.EnumFlagValue{
 		AllowedValues: []string{"wide", "name"},
 	}
 	command := &cobra.Command{

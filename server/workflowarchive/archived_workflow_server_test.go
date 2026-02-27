@@ -97,7 +97,8 @@ func Test_archivedWorkflowServer(t *testing.T) {
 			FinishedAt: finishedTime,
 			Nodes: map[string]v1alpha1.NodeStatus{
 				"failed-node":    {Name: "failed-node", StartedAt: createdTime, FinishedAt: finishedTime, Phase: v1alpha1.NodeFailed, Message: "failed"},
-				"succeeded-node": {Name: "succeeded-node", StartedAt: createdTime, FinishedAt: finishedTime, Phase: v1alpha1.NodeSucceeded, Message: "succeeded"}},
+				"succeeded-node": {Name: "succeeded-node", StartedAt: createdTime, FinishedAt: finishedTime, Phase: v1alpha1.NodeSucceeded, Message: "succeeded"},
+			},
 		},
 	}, nil)
 	repo.On("GetWorkflow", mock.Anything, "resubmit-uid", "", "").Return(&v1alpha1.Workflow{

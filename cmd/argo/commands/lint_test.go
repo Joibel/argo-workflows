@@ -15,7 +15,7 @@ func Test_OfflineLint(t *testing.T) {
 	dir := t.TempDir()
 
 	subdir := filepath.Join(dir, "subdir")
-	require.NoError(t, os.Mkdir(subdir, 0755))
+	require.NoError(t, os.Mkdir(subdir, 0o755))
 	wftmplPath := filepath.Join(subdir, "wftmpl.yaml")
 	err := os.WriteFile(wftmplPath, []byte(`
 apiVersion: argoproj.io/v1alpha1
@@ -36,7 +36,7 @@ spec:
           - cowsay
         args:
           - '{{inputs.parameters.msg}}'
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	clusterWftmplPath := filepath.Join(subdir, "cluster-workflow-template.yaml")
@@ -58,7 +58,7 @@ spec:
         - cowsay
       args:
         - '{{inputs.parameters.msg}}'
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	workflowPath := filepath.Join(subdir, "workflow.yaml")
@@ -82,7 +82,7 @@ spec:
               name: hello-world-cluster
               template: hello-world
               clusterScope: true
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	t.Run("linting a workflow missing references", func(t *testing.T) {
@@ -205,7 +205,7 @@ spec:
           limits:
             memory: 32Mi
             cpu: 100m
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	t.Run("linting a workflow with case sensitive fields and strict enabled", func(t *testing.T) {
@@ -279,7 +279,7 @@ spec:
             templateRef:
               name: hello-world-template-local-arg-2
               template: hello-world
-`), 0644)
+`), 0o644)
 	require.NoError(t, err)
 
 	t.Run("linting a workflow in multi-documents yaml", func(t *testing.T) {

@@ -264,7 +264,6 @@ func (t *Then) ExpectArtifactByKey(key string, bucketName string, f func(t *test
 	c, err := minio.New("localhost:9000", &minio.Options{
 		Creds: credentials.NewStaticV4("admin", "password", ""),
 	})
-
 	if err != nil {
 		t.t.Error(err)
 	}

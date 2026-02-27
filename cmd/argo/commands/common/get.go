@@ -282,7 +282,8 @@ func insertSorted(wf *wfv1.Workflow, sortedArray []renderNode, item renderNode) 
 // Return if I am a possible root
 func attachToParent(wf *wfv1.Workflow, n renderNode,
 	nonBoundaryParentChildrenMap map[string]*nonBoundaryParentNode, boundaryID string,
-	boundaryNodeMap map[string]*boundaryNode, parentBoundaryMap map[string][]renderNode) bool {
+	boundaryNodeMap map[string]*boundaryNode, parentBoundaryMap map[string][]renderNode,
+) bool {
 	// Check first if I am a child of a nonBoundaryParent
 	// that implies I attach to that instead of my boundary. This was already
 	// figured out in Pass 1
@@ -413,7 +414,8 @@ func filterNode(node wfv1.NodeStatus, getArgs GetFlags) (bool, bool) {
 // whether it was filtered and does this child need special indent
 func renderChild(w *tabwriter.Writer, wf *wfv1.Workflow, nInfo renderNode, depth int,
 	nodePrefix string, childPrefix string, parentFiltered bool,
-	childIndex int, maxIndex int, childIndent bool, getArgs GetFlags) {
+	childIndex int, maxIndex int, childIndent bool, getArgs GetFlags,
+) {
 	var part, subp string
 	if NoUtf8 {
 		if parentFiltered && childIndent {

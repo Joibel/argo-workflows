@@ -712,7 +712,7 @@ func FormulateResubmitWorkflow(ctx context.Context, wf *wfv1.Workflow, memoized 
 	replaceRegexp := regexp.MustCompile("^" + wf.Name)
 	newWF.Status.Nodes = make(map[string]wfv1.NodeStatus)
 	onExitNodeName := wf.Name + ".onExit"
-	var err = packer.DecompressWorkflow(ctx, wf)
+	err := packer.DecompressWorkflow(ctx, wf)
 	if err != nil {
 		log.WithPanic().WithError(err).Error(ctx, "Failed to decompress workflow")
 	}
@@ -948,9 +948,11 @@ func getChildren(n *dagNode) map[string]bool {
 	return children
 }
 
-type resetFn func(string)
-type deleteFn func(string)
-type matchFn func(*dagNode) bool
+type (
+	resetFn  func(string)
+	deleteFn func(string)
+	matchFn  func(*dagNode) bool
+)
 
 func matchNodeType(nodeType wfv1.NodeType) matchFn {
 	return func(n *dagNode) bool {

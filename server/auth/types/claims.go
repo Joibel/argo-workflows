@@ -39,7 +39,7 @@ func init() {
 // json.Unmarshal to mash every claim into a custom map
 func (c *Claims) UnmarshalJSON(data []byte) error {
 	type claimAlias Claims
-	var localClaim = claimAlias(*c)
+	localClaim := claimAlias(*c)
 
 	// Populate the claims struct as much as possible
 	err := json.Unmarshal(data, &localClaim)
@@ -89,7 +89,6 @@ func (c *Claims) GetCustomGroup(customKeyName string) ([]string, error) {
 func (c *Claims) GetUserInfoGroups(ctx context.Context, httpClient HTTPClient, accessToken, issuer, userInfoPath string) ([]string, error) {
 	url := fmt.Sprintf("%s%s", issuer, userInfoPath)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +97,6 @@ func (c *Claims) GetUserInfoGroups(ctx context.Context, httpClient HTTPClient, a
 	request.Header.Set("Authorization", bearer)
 
 	response, err := httpClient.Do(request)
-
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +105,6 @@ func (c *Claims) GetUserInfoGroups(ctx context.Context, httpClient HTTPClient, a
 
 	defer response.Body.Close()
 	err = json.NewDecoder(response.Body).Decode(&userInfo)
-
 	if err != nil {
 		return nil, err
 	}

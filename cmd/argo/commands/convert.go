@@ -20,12 +20,10 @@ import (
 )
 
 func NewConvertCommand() *cobra.Command {
-	var (
-		output = common.EnumFlagValue{
-			AllowedValues: []string{"yaml", "json"},
-			Value:         "yaml",
-		}
-	)
+	output := common.EnumFlagValue{
+		AllowedValues: []string{"yaml", "json"},
+		Value:         "yaml",
+	}
 
 	command := &cobra.Command{
 		Use:   "convert FILE...",

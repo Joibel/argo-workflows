@@ -59,6 +59,7 @@ func (getter *WorkflowTemplateFromInformerGetter) Get(_ context.Context, name st
 	}
 	return wfTmpl, nil
 }
+
 func NewWorkflowTemplateFromInformerGetter(wftmplInformer wfextvv1alpha1.WorkflowTemplateInformer, namespace string) templateresolution.WorkflowTemplateNamespacedGetter {
 	return &WorkflowTemplateFromInformerGetter{wftmplInformer: wftmplInformer, namespace: namespace}
 }

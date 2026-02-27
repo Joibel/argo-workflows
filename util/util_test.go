@@ -132,7 +132,6 @@ func TestMergeArtifacts(t *testing.T) {
 							Name: "artifact1",
 							ArtifactLocation: wfv1.ArtifactLocation{
 								S3: &wfv1.S3Artifact{
-
 									S3Bucket: wfv1.S3Bucket{
 										Bucket: "bucket1",
 									},

@@ -2668,6 +2668,7 @@ spec:
           - echo
           - '{{inputs.parameters.message}}'
 `
+
 var workflowTeamplateWithEnumValuesWithoutValue = `
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate

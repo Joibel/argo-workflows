@@ -54,7 +54,7 @@ func saveConfigMap(cm *apiv1.ConfigMap, pluginDir string) (string, error) {
 		return "", err
 	}
 	cmPath := filepath.Join(pluginDir, fmt.Sprintf("%s-configmap.yaml", cm.Name))
-	err = os.WriteFile(cmPath, addCodegenHeader(data), 0666)
+	err = os.WriteFile(cmPath, addCodegenHeader(data), 0o666)
 	return cmPath, err
 }
 

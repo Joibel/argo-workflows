@@ -27,18 +27,16 @@ func init() {
 	}
 }
 
-var (
-	variablesToCheck = []string{
-		"item",
-		"retries",
-		"lastRetry.exitCode",
-		"lastRetry.status",
-		"lastRetry.duration",
-		"lastRetry.message",
-		"workflow.status",
-		"workflow.failures",
-	}
-)
+var variablesToCheck = []string{
+	"item",
+	"retries",
+	"lastRetry.exitCode",
+	"lastRetry.status",
+	"lastRetry.duration",
+	"lastRetry.message",
+	"workflow.status",
+	"workflow.failures",
+}
 
 func anyVarNotInEnv(expression string, env map[string]any) *string {
 	for _, variable := range variablesToCheck {

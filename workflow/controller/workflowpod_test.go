@@ -1660,8 +1660,10 @@ func TestWindowsUNCPathsAreRemoved(t *testing.T) {
 	inp := wfv1.Artifact{
 		Name: "kubectl",
 		Path: "C:\\kubectl",
-		ArtifactLocation: wfv1.ArtifactLocation{HTTP: &wfv1.HTTPArtifact{
-			URL: "https://dl.k8s.io/release/v1.22.0/bin/windows/amd64/kubectl.exe"},
+		ArtifactLocation: wfv1.ArtifactLocation{
+			HTTP: &wfv1.HTTPArtifact{
+				URL: "https://dl.k8s.io/release/v1.22.0/bin/windows/amd64/kubectl.exe",
+			},
 		},
 	}
 	wf.Spec.Volumes = append(wf.Spec.Volumes, uncVolume)
@@ -1672,7 +1674,6 @@ func TestWindowsUNCPathsAreRemoved(t *testing.T) {
 	mainCtr := woc.execWf.Spec.Templates[0].Container
 	pod, _ := woc.createWorkflowPod(ctx, wf.Name, []apiv1.Container{*mainCtr}, &wf.Spec.Templates[0], &createWorkflowPodOpts{})
 	waitCtrIdx, err := wfutil.FindWaitCtrIndex(pod)
-
 	if err != nil {
 		require.Errorf(t, err, "could not find wait ctr index")
 	}

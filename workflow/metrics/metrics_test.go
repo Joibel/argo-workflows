@@ -119,7 +119,8 @@ func TestRealtimeMetricGC(t *testing.T) {
 		Help:   "None",
 		Gauge: &wfv1.Gauge{
 			Realtime: ptr.To(true),
-		}},
+		},
+	},
 		wfKey,
 		func() float64 { return 1.0 },
 	)

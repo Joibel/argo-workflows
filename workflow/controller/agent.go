@@ -97,7 +97,8 @@ func (woc *wfOperationCtx) getCertVolumeMount(ctx context.Context, name string) 
 				Secret: &apiv1.SecretVolumeSource{
 					SecretName: name,
 				},
-			}}
+			},
+		}
 
 		certVolumeMount := &apiv1.VolumeMount{
 			Name:      name,

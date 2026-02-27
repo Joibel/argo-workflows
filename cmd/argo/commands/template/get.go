@@ -9,7 +9,7 @@ import (
 )
 
 func NewGetCommand() *cobra.Command {
-	var output = common.NewPrintWorkflowOutputValue("")
+	output := common.NewPrintWorkflowOutputValue("")
 
 	command := &cobra.Command{
 		Use:   "get WORKFLOW_TEMPLATE...",

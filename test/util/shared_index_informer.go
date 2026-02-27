@@ -20,6 +20,7 @@ func NewSharedIndexInformer() *SharedIndexInformer {
 func (s *SharedIndexInformer) AddEventHandler(cache.ResourceEventHandler) (cache.ResourceEventHandlerRegistration, error) {
 	return nil, nil
 }
+
 func (s *SharedIndexInformer) AddEventHandlerWithResyncPeriod(cache.ResourceEventHandler, time.Duration) (cache.ResourceEventHandlerRegistration, error) {
 	return nil, nil
 }
@@ -41,6 +42,7 @@ func (s *SharedIndexInformer) SetTransform(handler cache.TransformFunc) error { 
 func (s *SharedIndexInformer) AddEventHandlerWithOptions(handler cache.ResourceEventHandler, options cache.HandlerOptions) (cache.ResourceEventHandlerRegistration, error) {
 	panic("implement me")
 }
+
 func (s *SharedIndexInformer) RemoveEventHandler(cache.ResourceEventHandlerRegistration) error {
 	return nil
 }

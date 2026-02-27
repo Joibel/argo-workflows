@@ -12,9 +12,7 @@ import (
 )
 
 func NewListLabelValueCommand() *cobra.Command {
-	var (
-		selector string
-	)
+	var selector string
 	command := &cobra.Command{
 		Use:   "list-label-values",
 		Short: "get workflow label values in the archive",

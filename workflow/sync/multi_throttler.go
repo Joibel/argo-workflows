@@ -29,8 +29,10 @@ type Throttler interface {
 	ResetNamespaceParallelism(namespace string)
 }
 
-type Key = string
-type QueueFunc func(Key)
+type (
+	Key       = string
+	QueueFunc func(Key)
+)
 
 // NewMultiThrottler creates a new multi throttler for throttling both namespace and global parallelism, a parallelism value of zero disables throttling
 func NewMultiThrottler(parallelism int, namespaceParallelismLimit int, queue QueueFunc) Throttler {

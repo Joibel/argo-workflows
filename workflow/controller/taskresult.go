@@ -19,9 +19,7 @@ import (
 	"github.com/argoproj/argo-workflows/v4/workflow/controller/indexes"
 )
 
-var (
-	workflowReq, _ = labels.NewRequirement(common.LabelKeyWorkflow, selection.Exists, nil)
-)
+var workflowReq, _ = labels.NewRequirement(common.LabelKeyWorkflow, selection.Exists, nil)
 
 func (wfc *WorkflowController) newWorkflowTaskResultInformer(ctx context.Context) cache.SharedIndexInformer {
 	log := logging.RequireLoggerFromContext(ctx)

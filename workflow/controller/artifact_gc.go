@@ -378,7 +378,8 @@ func (woc *wfOperationCtx) createWorkflowArtifactGCTask(ctx context.Context, tas
 
 // create the Pod which will do the deletions
 func (woc *wfOperationCtx) createArtifactGCPod(ctx context.Context, strategy wfv1.ArtifactGCStrategy, tasks []*wfv1.WorkflowArtifactGCTask,
-	info podInfo, podName string, templatesToArtList templatesToArtifacts, templatesByName map[string]*wfv1.Template) (*corev1.Pod, error) {
+	info podInfo, podName string, templatesToArtList templatesToArtifacts, templatesByName map[string]*wfv1.Template,
+) (*corev1.Pod, error) {
 	woc.log.WithFields(logging.Fields{"strategy": strategy, "podName": podName}).Info(ctx, "creating pod to delete artifacts")
 
 	// Pod is owned by WorkflowArtifactGCTasks, so it will die automatically when all of them have died
@@ -537,7 +538,6 @@ func (woc *wfOperationCtx) createArtifactGCPod(ctx context.Context, strategy wfv
 	}
 
 	_, err = woc.controller.kubeclientset.CoreV1().Pods(woc.wf.Namespace).Create(ctx, pod, metav1.CreateOptions{})
-
 	if err != nil {
 		if !apierr.IsAlreadyExists(err) {
 			return nil, fmt.Errorf("failed to create pod: %w", err)

@@ -41,8 +41,10 @@ type sender interface {
 	Send(entry *workflowpkg.LogEntry) error
 }
 
-const maxTokenLength = 1024 * 1024
-const startBufSize = 16 * 1024
+const (
+	maxTokenLength = 1024 * 1024
+	startBufSize   = 16 * 1024
+)
 
 func scanLinesOrGiveLong(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	advance, token, err = bufio.ScanLines(data, atEOF)

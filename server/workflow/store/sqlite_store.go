@@ -78,8 +78,10 @@ type SQLiteStore struct {
 	mtx             sync.Mutex
 }
 
-var _ WorkflowStore = &SQLiteStore{}
-var _ WorkflowLister = &SQLiteStore{}
+var (
+	_ WorkflowStore  = &SQLiteStore{}
+	_ WorkflowLister = &SQLiteStore{}
+)
 
 func NewSQLiteStore(instanceService instanceid.Service) (*SQLiteStore, error) {
 	conn, err := initDB()
@@ -104,7 +106,7 @@ where instanceid = ?
 		return nil, err
 	}
 
-	var workflows = wfv1.Workflows{}
+	workflows := wfv1.Workflows{}
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	err = sqlitex.Execute(s.conn, query, &sqlitex.ExecOptions{

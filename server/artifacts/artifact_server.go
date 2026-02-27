@@ -234,7 +234,6 @@ func (a *ArtifactServer) GetArtifactFile(w http.ResponseWriter, r *http.Request)
 		}).Debug(ctx, "not a directory")
 
 		err = a.returnArtifact(ctx, w, artifact, driver)
-
 		if err != nil {
 			a.httpFromError(ctx, err, w)
 		}
@@ -314,7 +313,6 @@ func (a *ArtifactServer) getArtifact(w http.ResponseWriter, r *http.Request, isI
 	}
 
 	err = a.returnArtifact(ctx, w, art, driver)
-
 	if err != nil {
 		a.httpFromError(ctx, err, w)
 		return
@@ -376,7 +374,6 @@ func (a *ArtifactServer) getArtifactByUID(w http.ResponseWriter, r *http.Request
 	}).Info(ctx, "Download artifact")
 
 	err = a.returnArtifact(ctx, w, art, driver)
-
 	if err != nil {
 		a.httpFromError(ctx, err, w)
 		return

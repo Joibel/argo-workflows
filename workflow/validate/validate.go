@@ -113,7 +113,7 @@ var _ wfv1.ArgumentsProvider = &FakeArguments{}
 var resourceManifestExpressionPattern = regexp.MustCompile(`{{\s*=\s*(.+?)\s*}}`)
 
 func SubstituteResourceManifestExpressions(manifest string) string {
-	var substitutions = make(map[string]string)
+	substitutions := make(map[string]string)
 	for _, match := range resourceManifestExpressionPattern.FindAllStringSubmatch(manifest, -1) {
 		substitutions[match[1]] = placeholderGenerator.NextPlaceholder()
 	}

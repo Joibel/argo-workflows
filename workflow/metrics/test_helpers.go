@@ -10,8 +10,10 @@ import (
 	"github.com/argoproj/argo-workflows/v4/util/telemetry"
 )
 
-var sharedMetrics *Metrics
-var sharedTE *telemetry.TestMetricsExporter
+var (
+	sharedMetrics *Metrics
+	sharedTE      *telemetry.TestMetricsExporter
+)
 
 // getSharedMetrics returns a singleton metrics with test exporter
 // This is necessary because only the first call to workqueue.SetProvider

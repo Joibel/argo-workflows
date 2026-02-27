@@ -34,7 +34,6 @@ func TestGetLimitFirstCall(t *testing.T) {
 
 	// Execute
 	limit, _, err := cl.get(context.Background(), "test-key")
-
 	// Verify
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)

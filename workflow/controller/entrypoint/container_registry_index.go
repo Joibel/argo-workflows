@@ -29,7 +29,7 @@ func (i *containerRegistryIndex) Lookup(ctx context.Context, image string, optio
 	if err != nil {
 		return nil, err
 	}
-	var defaultPlatform = pkgv1.Platform{
+	defaultPlatform := pkgv1.Platform{
 		Architecture: runtime.GOARCH,
 		OS:           runtime.GOOS,
 	}

@@ -91,8 +91,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 
 		targetNode := &retryNode{}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		sourceNodeSelectorRequirement := apiv1.NodeSelectorRequirement{
 			Key:      hostSelector,
 			Operator: apiv1.NodeSelectorOpNotIn,
@@ -110,8 +109,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		sourceNodeSelectorRequirement := apiv1.NodeSelectorRequirement{
 			Key:      hostSelector,
 			Operator: apiv1.NodeSelectorOpNotIn,
@@ -131,8 +129,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		sourceNodeSelectorRequirement := apiv1.NodeSelectorRequirement{
 			Key:      hostSelector,
 			Operator: apiv1.NodeSelectorOpNotIn,
@@ -154,8 +151,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		sourceNodeSelectorRequirement := apiv1.NodeSelectorRequirement{
 			Key:      hostSelector,
 			Operator: apiv1.NodeSelectorOpNotIn,
@@ -181,8 +177,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		sourceNodeSelectorRequirement := apiv1.NodeSelectorRequirement{
 			Key:      hostSelector,
 			Operator: apiv1.NodeSelectorOpNotIn,
@@ -220,10 +215,8 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement0 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
-		targetNodeSelectorRequirement1 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
+		targetNodeSelectorRequirement0 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement1 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
 		assert.Equal(t, sourceNodeSelectorRequirement0, targetNodeSelectorRequirement0)
 		assert.Equal(t, sourceNodeSelectorRequirement1, targetNodeSelectorRequirement1)
 	})
@@ -257,10 +250,8 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement0 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
-		targetNodeSelectorRequirement1 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
+		targetNodeSelectorRequirement0 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement1 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
 		assert.Equal(t, sourceNodeSelectorRequirement0, targetNodeSelectorRequirement0)
 		assert.Equal(t, sourceNodeSelectorRequirement1, targetNodeSelectorRequirement1)
 	})
@@ -294,10 +285,8 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement0 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
-		targetNodeSelectorRequirement1 :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
+		targetNodeSelectorRequirement0 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement1 := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[1]
 		assert.Equal(t, sourceNodeSelectorRequirement0, targetNodeSelectorRequirement0)
 		assert.Equal(t, sourceNodeSelectorRequirement1, targetNodeSelectorRequirement1)
 	})
@@ -331,8 +320,7 @@ func TestAddHostnamesToAffinity(t *testing.T) {
 			},
 		}
 		targetNode.targetAffinity = AddHostnamesToAffinity(hostSelector, hostNames, targetNode.targetAffinity)
-		targetNodeSelectorRequirement :=
-			targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
+		targetNodeSelectorRequirement := targetNode.targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions[0]
 		assert.Equal(t, sourceNodeSelectorRequirementMerged, targetNodeSelectorRequirement)
 	})
 	t.Run("MergeWithExistingSpecAffinity", func(t *testing.T) {

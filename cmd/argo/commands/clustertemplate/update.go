@@ -17,7 +17,7 @@ type cliUpdateOpts struct {
 }
 
 func NewUpdateCommand() *cobra.Command {
-	var opts = cliUpdateOpts{output: common.NewPrintWorkflowOutputValue("")}
+	opts := cliUpdateOpts{output: common.NewPrintWorkflowOutputValue("")}
 	command := &cobra.Command{
 		Use:   "update FILE1 FILE2...",
 		Short: "update a cluster workflow template",

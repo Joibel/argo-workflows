@@ -8,8 +8,7 @@ import (
 )
 
 // Store is a wrapper around informer
-type ClientStore struct {
-}
+type ClientStore struct{}
 
 func NewClientStore() *ClientStore {
 	return &ClientStore{}

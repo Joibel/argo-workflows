@@ -275,8 +275,10 @@ func TestOverridableTemplateInputParamsValue(t *testing.T) {
 
 	configMapStore := mockConfigMapStore{}
 	configMapStore.getByKey = func(key string) (any, bool, error) {
-		return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{LabelKeyConfigMapType: LabelValueTypeConfigMapParameter}},
+		return &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{LabelKeyConfigMapType: LabelValueTypeConfigMapParameter},
+			},
 			Data: map[string]string{overrideConfigMapKey: overrideConfigMapValue},
 		}, true, nil
 	}
@@ -322,8 +324,10 @@ func TestOverridableTemplateInputParamsValueFrom(t *testing.T) {
 
 	configMapStore := mockConfigMapStore{}
 	configMapStore.getByKey = func(key string) (any, bool, error) {
-		return &corev1.ConfigMap{ObjectMeta: metav1.ObjectMeta{
-			Labels: map[string]string{LabelKeyConfigMapType: LabelValueTypeConfigMapParameter}},
+		return &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: map[string]string{LabelKeyConfigMapType: LabelValueTypeConfigMapParameter},
+			},
 			Data: map[string]string{configMapKey: configMapValue, overrideConfigMapKey: overrideConfigMapValue},
 		}, true, nil
 	}

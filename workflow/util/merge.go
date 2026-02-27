@@ -41,7 +41,6 @@ func MergeTo(patch, target *wfv1.Workflow) error {
 	var mergedWfByte []byte
 
 	mergedWfByte, err = strategicpatch.StrategicMergePatch(patchWfBytes, targetWfByte, wfv1.Workflow{})
-
 	if err != nil {
 		return err
 	}

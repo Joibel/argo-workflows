@@ -30,9 +30,7 @@ type estimatorFactory struct {
 
 var _ EstimatorFactory = &estimatorFactory{}
 
-var (
-	skipWorkflowDurationEstimation = env.LookupEnvStringOr("SKIP_WORKFLOW_DURATION_ESTIMATION", "false")
-)
+var skipWorkflowDurationEstimation = env.LookupEnvStringOr("SKIP_WORKFLOW_DURATION_ESTIMATION", "false")
 
 func NewEstimatorFactory(ctx context.Context, wfInformer cache.SharedIndexInformer, hydrator hydrator.Interface, wfArchive sqldb.WorkflowArchive) EstimatorFactory {
 	return &estimatorFactory{wfInformer, hydrator, wfArchive}

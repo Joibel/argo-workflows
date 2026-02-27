@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -19,8 +20,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // load authentication plugins
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/utils/env"
-
-	"os"
 
 	"github.com/argoproj/argo-workflows/v4"
 	"github.com/argoproj/argo-workflows/v4/cmd/argo/commands/client"

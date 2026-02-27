@@ -34,10 +34,8 @@ type backfillOpts struct {
 }
 
 func NewBackfillCommand() *cobra.Command {
-	var (
-		cliOps backfillOpts
-	)
-	var command = &cobra.Command{
+	var cliOps backfillOpts
+	command := &cobra.Command{
 		Use:   "backfill cronwf",
 		Short: "create a cron backfill(new alpha feature)",
 		RunE: func(cmd *cobra.Command, args []string) error {

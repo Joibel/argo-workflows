@@ -184,7 +184,6 @@ func (s *ArtifactsSuite) TestGlobalArtifactPassing() {
 					c, err := minio.New("localhost:9000", &minio.Options{
 						Creds: credentials.NewStaticV4("admin", "password", ""),
 					})
-
 					if err != nil {
 						t.Error(err)
 					}

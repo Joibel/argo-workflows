@@ -227,8 +227,11 @@ linters:
 formatters:
   enable:
     - gofmt
+    - gofumpt
     - goimports
   settings:
+    gofumpt:
+      module-path: github.com/argoproj/argo-workflows/
     goimports:
       local-prefixes:
         - github.com/argoproj/argo-workflows/

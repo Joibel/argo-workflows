@@ -206,7 +206,7 @@ func TestArtifact_ValidatePath(t *testing.T) {
 	})
 
 	t.Run("directory traversal above safe base dir fails", func(t *testing.T) {
-		var assertPathError = func(err error) {
+		assertPathError := func(err error) {
 			require.ErrorContains(t, err, "Directory traversal is not permitted")
 		}
 
@@ -641,11 +641,11 @@ func TestArtifactGC_GetStrategy(t *testing.T) {
 		assert.Equal(t, ArtifactGCStrategyUndefined, artifactGC.GetStrategy())
 	})
 	t.Run("Unspecified", func(t *testing.T) {
-		var artifactGC = &ArtifactGC{}
+		artifactGC := &ArtifactGC{}
 		assert.Equal(t, ArtifactGCStrategyUndefined, artifactGC.GetStrategy())
 	})
 	t.Run("Specified", func(t *testing.T) {
-		var artifactGC = &ArtifactGC{Strategy: ArtifactGCOnWorkflowCompletion}
+		artifactGC := &ArtifactGC{Strategy: ArtifactGCOnWorkflowCompletion}
 		assert.Equal(t, ArtifactGCOnWorkflowCompletion, artifactGC.GetStrategy())
 	})
 }
@@ -673,11 +673,11 @@ func TestPodGC_GetStrategy(t *testing.T) {
 		assert.Equal(t, PodGCOnPodNone, podGC.GetStrategy())
 	})
 	t.Run("Unspecified", func(t *testing.T) {
-		var podGC = &PodGC{}
+		podGC := &PodGC{}
 		assert.Equal(t, PodGCOnPodNone, podGC.GetStrategy())
 	})
 	t.Run("Specified", func(t *testing.T) {
-		var podGC = &PodGC{Strategy: PodGCOnWorkflowSuccess}
+		podGC := &PodGC{Strategy: PodGCOnWorkflowSuccess}
 		assert.Equal(t, PodGCOnWorkflowSuccess, podGC.GetStrategy())
 	})
 }
@@ -690,7 +690,7 @@ func TestPodGC_GetLabelSelector(t *testing.T) {
 		assert.Equal(t, labels.Nothing(), selector)
 	})
 	t.Run("Unspecified", func(t *testing.T) {
-		var podGC = &PodGC{}
+		podGC := &PodGC{}
 		selector, err := podGC.GetLabelSelector()
 		require.NoError(t, err)
 		assert.Equal(t, labels.Everything(), selector)
@@ -701,7 +701,7 @@ func TestPodGC_GetLabelSelector(t *testing.T) {
 				"foo": "bar",
 			},
 		}
-		var podGC = &PodGC{LabelSelector: labelSelector}
+		podGC := &PodGC{LabelSelector: labelSelector}
 		selector, err := podGC.GetLabelSelector()
 		require.NoError(t, err)
 		assert.Equal(t, "foo=bar", selector.String())

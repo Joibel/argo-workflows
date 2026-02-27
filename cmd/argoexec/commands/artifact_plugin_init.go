@@ -65,7 +65,7 @@ func NewArtifactPluginInitCommand() *cobra.Command {
 }
 
 func loadArtifactPlugin(ctx context.Context, pluginName wfv1.ArtifactPluginName) error {
-	if err := os.MkdirAll(pluginName.SocketDir(), 0755); err != nil {
+	if err := os.MkdirAll(pluginName.SocketDir(), 0o755); err != nil {
 		return err
 	}
 	wfExecutor := executor.Init(ctx, clientConfig, varRunArgo)

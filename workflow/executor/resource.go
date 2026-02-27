@@ -249,7 +249,6 @@ func (we *WorkflowExecutor) WaitResource(ctx context.Context, resourceNamespace,
 func (we *WorkflowExecutor) checkResourceState(ctx context.Context, selfLink string, successReqs labels.Requirements, failReqs labels.Requirements) (bool, error) {
 	request := we.RESTClient.Get().RequestURI(selfLink)
 	stream, err := request.Stream(ctx)
-
 	if err != nil {
 		err = argoerrors.Cause(err)
 		if apierr.IsNotFound(err) {

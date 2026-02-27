@@ -64,6 +64,7 @@ func (s *ArgoServerSuite) e() *httpexpect.Expect {
 			}
 		})
 }
+
 func (s *ArgoServerSuite) expectB(b *testing.B) *httpexpect.Expect {
 	return httpexpect.
 		WithConfig(httpexpect.Config{
@@ -1056,9 +1057,9 @@ func (s *ArgoServerSuite) TestWorkflowServiceListArchived() {
 				}`)).
 			Expect().Status(200).JSON())
 	})
-	var uidBobWf = bobWf.Path("$.metadata.uid").
+	uidBobWf := bobWf.Path("$.metadata.uid").
 		NotNull().String().Raw()
-	var nameBobWf = bobWf.Path("$.metadata.name").
+	nameBobWf := bobWf.Path("$.metadata.name").
 		NotNull().String().Raw()
 
 	var aliceWf *httpexpect.Value
@@ -1088,9 +1089,9 @@ func (s *ArgoServerSuite) TestWorkflowServiceListArchived() {
 				}`)).
 			Expect().Status(200).JSON())
 	})
-	var uidAliceWf = aliceWf.Path("$.metadata.uid").
+	uidAliceWf := aliceWf.Path("$.metadata.uid").
 		NotNull().String().Raw()
-	var nameAliceWf = aliceWf.Path("$.metadata.name").
+	nameAliceWf := aliceWf.Path("$.metadata.name").
 		NotNull().String().Raw()
 
 	s.Given().When().
@@ -1242,9 +1243,9 @@ func (s *ArgoServerSuite) TestWorkflowArchiveServiceList() {
 				}`)).
 			Expect().Status(200).JSON())
 	})
-	var uidBobWf = bobWf.Path("$.metadata.uid").
+	uidBobWf := bobWf.Path("$.metadata.uid").
 		NotNull().String().Raw()
-	var nameBobWf = bobWf.Path("$.metadata.name").
+	nameBobWf := bobWf.Path("$.metadata.name").
 		NotNull().String().Raw()
 
 	var aliceWf *httpexpect.Value
@@ -1274,9 +1275,9 @@ func (s *ArgoServerSuite) TestWorkflowArchiveServiceList() {
 				}`)).
 			Expect().Status(200).JSON())
 	})
-	var uidAliceWf = aliceWf.Path("$.metadata.uid").
+	uidAliceWf := aliceWf.Path("$.metadata.uid").
 		NotNull().String().Raw()
-	var nameAliceWf = aliceWf.Path("$.metadata.name").
+	nameAliceWf := aliceWf.Path("$.metadata.name").
 		NotNull().String().Raw()
 
 	s.Given().When().

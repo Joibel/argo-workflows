@@ -23,7 +23,7 @@ type listFlags struct {
 }
 
 func NewListCommand() *cobra.Command {
-	var listArgs = listFlags{output: common.EnumFlagValue{AllowedValues: []string{"wide", "name"}}}
+	listArgs := listFlags{output: common.EnumFlagValue{AllowedValues: []string{"wide", "name"}}}
 	command := &cobra.Command{
 		Use:   "list",
 		Short: "list workflow templates",

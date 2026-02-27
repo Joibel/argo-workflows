@@ -17,9 +17,7 @@ import (
 
 type metricsFunc func(context.Context, string, string)
 
-var (
-	metricsF metricsFunc
-)
+var metricsF metricsFunc
 
 type Type int
 

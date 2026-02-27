@@ -113,7 +113,6 @@ func (q *syncQueries) UpdateSemaphoreLimit(ctx context.Context, name string, siz
 		Set(LimitSizeField, sizeLimit).
 		Where(db.Cond{LimitNameField: name}).
 		Exec()
-
 	if err != nil {
 		return err
 	}

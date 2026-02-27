@@ -617,12 +617,12 @@ func TestUntarMaliciousSymlink(t *testing.T) {
 
 	// Create a target directory outside the extraction root
 	outsideDir := filepath.Join(tmpDir, "outside")
-	err := os.Mkdir(outsideDir, 0755)
+	err := os.Mkdir(outsideDir, 0o755)
 	require.NoError(t, err)
 
 	// Create a file in the outside directory to verify it's NOT overwritten initially
 	targetFile := filepath.Join(outsideDir, "pwned")
-	err = os.WriteFile(targetFile, []byte("safe"), 0644)
+	err = os.WriteFile(targetFile, []byte("safe"), 0o644)
 	require.NoError(t, err)
 
 	// Create the malicious tarball directly
@@ -640,7 +640,7 @@ func TestUntarMaliciousSymlink(t *testing.T) {
 		Name:     "link",
 		Typeflag: tar.TypeSymlink,
 		Linkname: absOutside,
-		Mode:     0777,
+		Mode:     0o777,
 	})
 	require.NoError(t, err)
 
@@ -649,7 +649,7 @@ func TestUntarMaliciousSymlink(t *testing.T) {
 	err = tw.WriteHeader(&tar.Header{
 		Name:     "link/pwned",
 		Typeflag: tar.TypeReg,
-		Mode:     0644,
+		Mode:     0o644,
 		Size:     int64(len(fileContent)),
 	})
 	require.NoError(t, err)
@@ -697,12 +697,12 @@ func TestUnzipMaliciousSymlink(t *testing.T) {
 
 	// Create a target directory outside the extraction root
 	outsideDir := filepath.Join(tmpDir, "outside")
-	err := os.Mkdir(outsideDir, 0755)
+	err := os.Mkdir(outsideDir, 0o755)
 	require.NoError(t, err)
 
 	// Create a file in the outside directory
 	targetFile := filepath.Join(outsideDir, "pwned")
-	err = os.WriteFile(targetFile, []byte("safe"), 0644)
+	err = os.WriteFile(targetFile, []byte("safe"), 0o644)
 	require.NoError(t, err)
 
 	// Create the malicious zip
@@ -716,7 +716,7 @@ func TestUnzipMaliciousSymlink(t *testing.T) {
 		Name:   "link",
 		Method: zip.Store,
 	}
-	header.SetMode(0777 | os.ModeSymlink)
+	header.SetMode(0o777 | os.ModeSymlink)
 	w, err := zw.CreateHeader(header)
 	require.NoError(t, err)
 	_, err = w.Write([]byte("../outside"))

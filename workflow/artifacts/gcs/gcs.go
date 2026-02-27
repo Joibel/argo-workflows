@@ -60,8 +60,10 @@ func isTransientGCSErr(ctx context.Context, err error) bool {
 	// Retry errors that might be an unexported type
 	// Also picks up certain 500-level codes that are sent back from upstream gcp services
 	// and not caught by the googleapi.Error case (Workload Identity in particular)
-	retriable := []string{"connection refused", "connection reset", "Received 504",
-		"Received 500", "TLS handshake timeout"}
+	retriable := []string{
+		"connection refused", "connection reset", "Received 504",
+		"Received 500", "TLS handshake timeout",
+	}
 	for _, s := range retriable {
 		if strings.Contains(err.Error(), s) {
 			return true

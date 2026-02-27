@@ -188,7 +188,6 @@ func (s *workflowServer) ListWorkflows(ctx context.Context, req *workflowpkg.Wor
 	s.instanceIDService.With(&listOption)
 
 	options, err := sutils.BuildListOptions(listOption, req.Namespace, "", req.NameFilter, req.CreatedAfter, req.FinishedBefore)
-
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +354,6 @@ func (s *workflowServer) WatchWorkflows(req *workflowpkg.WatchWorkflowsRequest, 
 	// immediately.  Without this, we cannot detect a streaming response, and we can't write to the
 	// response since a subsequent write by the stream causes an error.
 	err = ws.SendHeader(metadata.MD{})
-
 	if err != nil {
 		return err
 	}
@@ -412,7 +410,6 @@ func (s *workflowServer) WatchEvents(req *workflowpkg.WatchEventsRequest, ws wor
 	defer logger.Debug(ctx, "Result channel done")
 
 	err = ws.SendHeader(metadata.MD{})
-
 	if err != nil {
 		return sutils.ToStatusError(err, codes.Internal)
 	}

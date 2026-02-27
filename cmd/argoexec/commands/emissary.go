@@ -306,18 +306,18 @@ func startCommand(ctx context.Context, name string, args []string, template *wfv
 	command := exec.CommandContext(ctx, name, args...)
 	command.Env = os.Environ()
 
-	var closer = func() {}
+	closer := func() {}
 	var stdout io.Writer = os.Stdout
 	var stderr io.Writer = os.Stderr
 
 	// this may not be that important an optimisation, except for very long logs we don't want to capture
 	if includeScriptOutput || template.SaveLogsAsArtifact() {
 		logger.Info(ctx, "capturing logs")
-		stdoutf, err := os.OpenFile(varRunArgo+"/ctr/"+containerName+"/stdout", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		stdoutf, err := os.OpenFile(varRunArgo+"/ctr/"+containerName+"/stdout", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to open stdout: %w", err)
 		}
-		combinedf, err := os.OpenFile(varRunArgo+"/ctr/"+containerName+"/combined", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		combinedf, err := os.OpenFile(varRunArgo+"/ctr/"+containerName+"/combined", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to open combined: %w", err)
 		}

@@ -535,10 +535,11 @@ func TestSelectorMatchesNode(t *testing.T) {
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			node := wfv1.NodeStatus{ID: "123", Name: "failed-node", Phase: wfv1.NodeFailed, TemplateRef: &wfv1.TemplateRef{
-				Name:     "templateName",
-				Template: "template",
-			},
+			node := wfv1.NodeStatus{
+				ID: "123", Name: "failed-node", Phase: wfv1.NodeFailed, TemplateRef: &wfv1.TemplateRef{
+					Name:     "templateName",
+					Template: "template",
+				},
 				Inputs: &wfv1.Inputs{
 					Parameters: []wfv1.Parameter{
 						{
@@ -1041,7 +1042,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 			Status: wfv1.WorkflowStatus{
 				Phase: wfv1.WorkflowFailed,
 				Nodes: map[string]wfv1.NodeStatus{
-					"my-dag": {Phase: wfv1.NodeFailed, Type: wfv1.NodeTypeDAG, Name: "my-dag", ID: "my-dag"}},
+					"my-dag": {Phase: wfv1.NodeFailed, Type: wfv1.NodeTypeDAG, Name: "my-dag", ID: "my-dag"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1070,10 +1072,12 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 							Name:      "param-1",
 							Value:     wfv1.AnyStringPtr("3"),
 							ValueFrom: &wfv1.ValueFrom{Supplied: &wfv1.SuppliedValueFrom{}},
-						}}}},
+						}}},
+					},
 					"child":   {ID: "child", Phase: wfv1.NodeSkipped, Type: wfv1.NodeTypeSkipped, BoundaryID: "suspended"},
 					"skipped": {ID: "skipped", Phase: wfv1.NodeSkipped, Type: wfv1.NodeTypeSkipped, BoundaryID: "entrypoint"},
-				}},
+				},
+			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
 		require.NoError(t, err)
@@ -1096,7 +1100,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 					"1":               {ID: "1", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "my-nested-dag-1", Children: []string{"2", "4"}},
 					"2":               {ID: "2", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "1", Children: []string{"3"}},
 					"3":               {ID: "3", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "2"},
-					"4":               {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "1"}},
+					"4":               {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "1"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1123,7 +1128,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 					"1":               {ID: "1", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "my-nested-dag-2", Children: []string{"2", "4"}},
 					"2":               {ID: "2", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "1", Children: []string{"3"}},
 					"3":               {ID: "3", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "2"},
-					"4":               {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "1"}},
+					"4":               {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "1"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1152,7 +1158,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 				Phase: wfv1.WorkflowFailed,
 				Nodes: map[string]wfv1.NodeStatus{
 					"override-param-wf": {ID: "override-param-wf", Name: "override-param-wf", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeDAG},
-				}},
+				},
+			},
 		}
 		wf, _, err := FormulateRetryWorkflow(logging.TestContext(t.Context()), wf, false, "", []string{"message=modified"})
 		require.NoError(t, err)
@@ -1175,11 +1182,14 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 				Nodes: map[string]wfv1.NodeStatus{
 					"override-param-wf": {ID: "override-param-wf", Name: "override-param-wf", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup},
 				},
-				StoredWorkflowSpec: &wfv1.WorkflowSpec{Arguments: wfv1.Arguments{
-					Parameters: []wfv1.Parameter{
-						{Name: "message", Value: wfv1.AnyStringPtr("default")},
-					}},
-				}},
+				StoredWorkflowSpec: &wfv1.WorkflowSpec{
+					Arguments: wfv1.Arguments{
+						Parameters: []wfv1.Parameter{
+							{Name: "message", Value: wfv1.AnyStringPtr("default")},
+						},
+					},
+				},
+			},
 		}
 		wf, _, err := FormulateRetryWorkflow(logging.TestContext(t.Context()), wf, false, "", []string{"message=modified"})
 		require.NoError(t, err)
@@ -1232,7 +1242,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 				Nodes: map[string]wfv1.NodeStatus{
 					"successful-workflow-1": {ID: "successful-workflow-1", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, Children: []string{"1"}},
 					"1":                     {ID: "1", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "successful-workflow-1", Children: []string{"2"}},
-					"2":                     {ID: "2", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "1"}},
+					"2":                     {ID: "2", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "1"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1254,7 +1265,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 					"1":                     {ID: "1", Name: "1", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "successful-workflow-2", Children: []string{"2", "4"}},
 					"2":                     {ID: "2", Name: "2", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypeTaskGroup, BoundaryID: "1", Children: []string{"3"}},
 					"3":                     {ID: "3", Name: "3", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "2"},
-					"4":                     {ID: "4", Name: "4", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "1"}},
+					"4":                     {ID: "4", Name: "4", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "1"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1284,7 +1296,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 					"2":                           {ID: "2", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow", Children: []string{"3"}, Name: "node2"},
 					"3":                           {ID: "3", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow", Name: "node3"},
 					"4":                           {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow", Children: []string{"5"}, Name: "node4"},
-					"5":                           {ID: "5", Phase: wfv1.NodeOmitted, Type: wfv1.NodeTypeSkipped, BoundaryID: "continue-on-failed-workflow", Name: "node5"}},
+					"5":                           {ID: "5", Phase: wfv1.NodeOmitted, Type: wfv1.NodeTypeSkipped, BoundaryID: "continue-on-failed-workflow", Name: "node5"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})
@@ -1310,7 +1323,8 @@ func TestFormulateRetryWorkflow(t *testing.T) {
 					"2":                             {ID: "2", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow-2", Children: []string{"3"}, Name: "node2"},
 					"3":                             {ID: "3", Phase: wfv1.NodeSucceeded, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow-2", Name: "node3"},
 					"4":                             {ID: "4", Phase: wfv1.NodeFailed, Type: wfv1.NodeTypePod, BoundaryID: "continue-on-failed-workflow-2", Children: []string{"5"}, Name: "node4"},
-					"5":                             {ID: "5", Phase: wfv1.NodeOmitted, Type: wfv1.NodeTypeSkipped, BoundaryID: "continue-on-failed-workflow-2", Name: "node5"}},
+					"5":                             {ID: "5", Phase: wfv1.NodeOmitted, Type: wfv1.NodeTypeSkipped, BoundaryID: "continue-on-failed-workflow-2", Name: "node5"},
+				},
 			},
 		}
 		_, err := wfClient.Create(ctx, wf, metav1.CreateOptions{})

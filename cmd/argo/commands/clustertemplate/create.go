@@ -17,7 +17,7 @@ type cliCreateOpts struct {
 }
 
 func NewCreateCommand() *cobra.Command {
-	var opts = cliCreateOpts{output: common.NewPrintWorkflowOutputValue("")}
+	opts := cliCreateOpts{output: common.NewPrintWorkflowOutputValue("")}
 	command := &cobra.Command{
 		Use:   "create FILE1 FILE2...",
 		Short: "create a cluster workflow template",

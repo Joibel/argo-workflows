@@ -85,7 +85,7 @@ func TestNewDriver(t *testing.T) {
 	// This test would require a mock gRPC server to be running
 	// For now, we'll just test that the function returns an error for invalid socket paths
 	path := filepath.Join(t.TempDir(), "nonexistent", "socket")
-	err := os.MkdirAll(filepath.Dir(path), 0755)
+	err := os.MkdirAll(filepath.Dir(path), 0o755)
 	require.NoError(t, err)
 
 	// Use a context with timeout to avoid waiting the full 120 seconds

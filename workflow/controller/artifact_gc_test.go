@@ -417,7 +417,7 @@ func TestProcessArtifactGCStrategy(t *testing.T) {
 	///////////////////////////////////////////////////////////////////////////////////////////
 	// Verify WorkflowArtifactGCTasks
 	///////////////////////////////////////////////////////////////////////////////////////////
-	wfats, err := wfatcs.List(ctx, metav1.ListOptions{}) //todo: add ListOptions if this works
+	wfats, err := wfatcs.List(ctx, metav1.ListOptions{}) // todo: add ListOptions if this works
 	if err != nil {
 		panic(err)
 	}

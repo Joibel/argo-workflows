@@ -110,7 +110,7 @@ func RunLint(ctx context.Context, client apiclient.Client, kinds []string, outpu
 // Entities of other kinds are ignored.
 func Lint(ctx context.Context, opts *Options) (*Results, error) {
 	var fmtr Formatter = defaultFormatter
-	var w = io.Discard
+	w := io.Discard
 	if opts.Formatter != nil {
 		fmtr = opts.Formatter
 	}

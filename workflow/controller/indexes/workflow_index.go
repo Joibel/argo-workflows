@@ -13,9 +13,7 @@ import (
 	"github.com/argoproj/argo-workflows/v4/workflow/util"
 )
 
-var (
-	indexWorkflowSemaphoreKeys = os.Getenv("INDEX_WORKFLOW_SEMAPHORE_KEYS") != "false"
-)
+var indexWorkflowSemaphoreKeys = os.Getenv("INDEX_WORKFLOW_SEMAPHORE_KEYS") != "false"
 
 func init() {
 	logging.InitLogger().WithField("indexWorkflowSemaphoreKeys", indexWorkflowSemaphoreKeys).Info(context.Background(), "index config")

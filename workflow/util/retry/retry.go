@@ -83,39 +83,33 @@ func AddHostnamesToAffinity(hostSelector string, hostNames []string, targetAffin
 	sourceExecution := sourceAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
 
 	if targetExecution == nil {
-		targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution =
-			sourceAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
+		targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = sourceAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
 		return targetAffinity
 	}
 
 	if len(targetExecution.NodeSelectorTerms) == 0 {
-		targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms =
-			sourceAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+		targetAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = sourceAffinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 		return targetAffinity
 	}
 
 	// find if specific NodeSelectorTerm exists and append
 	for i := range targetExecution.NodeSelectorTerms {
 		if len(targetExecution.NodeSelectorTerms[i].MatchExpressions) == 0 {
-			targetExecution.NodeSelectorTerms[i].MatchExpressions =
-				append(targetExecution.NodeSelectorTerms[i].MatchExpressions, sourceExecution.NodeSelectorTerms[0].MatchExpressions[0])
+			targetExecution.NodeSelectorTerms[i].MatchExpressions = append(targetExecution.NodeSelectorTerms[i].MatchExpressions, sourceExecution.NodeSelectorTerms[0].MatchExpressions[0])
 			return targetAffinity
 		}
 
 		for j := range targetExecution.NodeSelectorTerms[i].MatchExpressions {
 			if targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Key == hostSelector &&
 				targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Operator == apiv1.NodeSelectorOpNotIn {
-				targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values =
-					append(targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values, hostNames...)
-				targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values =
-					RemoveDuplicates(targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values)
+				targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values = append(targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values, hostNames...)
+				targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values = RemoveDuplicates(targetExecution.NodeSelectorTerms[i].MatchExpressions[j].Values)
 				return targetAffinity
 			}
 		}
 	}
 
-	targetExecution.NodeSelectorTerms[0].MatchExpressions =
-		append(targetExecution.NodeSelectorTerms[0].MatchExpressions, nodeSelectorRequirement)
+	targetExecution.NodeSelectorTerms[0].MatchExpressions = append(targetExecution.NodeSelectorTerms[0].MatchExpressions, nodeSelectorRequirement)
 
 	return targetAffinity
 }
