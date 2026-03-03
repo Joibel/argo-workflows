@@ -149,7 +149,9 @@ The phase of one node as observed by the controller in the DAG of a workflow.
 
 Patching the WorkflowTaskResult.
 
-This span has no attributes.
+| Attribute | Description |
+|---|---|
+| `completed` | True if this patch marks outputs as completed |
 
 #### `persist_updates`
 

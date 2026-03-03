@@ -535,6 +535,8 @@ spans:
     kind: Producer
   - name: PatchTaskResult
     description: Patching the WorkflowTaskResult
+    attributes:
+      - name: TaskResultCompleted
     parents: [RunWaitContainer, RunMainContainer]
   - name: PersistUpdates
     description: Persisting workflow status updates to Kubernetes

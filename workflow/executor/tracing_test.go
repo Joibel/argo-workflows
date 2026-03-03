@@ -159,7 +159,7 @@ func TestTracingWaitContainerChildSpans(t *testing.T) {
 	_, createSpan := tr.StartCreateTaskResult(ctx)
 	createSpan.End()
 
-	_, patchSpan := tr.StartPatchTaskResult(ctx)
+	_, patchSpan := tr.StartPatchTaskResult(ctx, true)
 	patchSpan.End()
 
 	_, workloadSpan := tr.StartWaitWorkload(ctx)

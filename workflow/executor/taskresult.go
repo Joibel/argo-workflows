@@ -36,7 +36,7 @@ func (we *WorkflowExecutor) upsertTaskResult(ctx context.Context, result wfv1.No
 }
 
 func (we *WorkflowExecutor) patchTaskResult(ctx context.Context, result wfv1.NodeResult, labels map[string]string) error {
-	ctx, span := we.Tracing.StartPatchTaskResult(ctx)
+	ctx, span := we.Tracing.StartPatchTaskResult(ctx, labels[common.LabelKeyReportOutputsCompleted] == "true")
 	defer span.End()
 	taskResult := &wfv1.WorkflowTaskResult{NodeResult: result}
 	if len(labels) > 0 {

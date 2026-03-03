@@ -236,10 +236,15 @@ func (t *Tracing) StartNodePhase(ctx context.Context, nodeID string, nodePhase s
 
 var SpanPatchTaskResult = Span{
 	name: "patchTaskResult",
+	attributes: []BuiltinAttribute{
+		{
+			name: AttribTaskResultCompleted,
+		},
+	},
 }
 
 // StartPatchTaskResult starts a patch_task_result span
-func (t *Tracing) StartPatchTaskResult(ctx context.Context) (context.Context, trace.Span) {
+func (t *Tracing) StartPatchTaskResult(ctx context.Context, completed bool) (context.Context, trace.Span) {
 	parent := trace.SpanFromContext(ctx)
 	if roParent, ok := parent.(sdktrace.ReadOnlySpan); ok {
 		parentName := roParent.Name()
@@ -247,8 +252,11 @@ func (t *Tracing) StartPatchTaskResult(ctx context.Context) (context.Context, tr
 			logging.RequireLoggerFromContext(ctx).WithFields(logging.Fields{"startMethod": "StartPatchTaskResult", "expectedParents": "runWaitContainer, runMainContainer", "actualParent": parentName}).Error(ctx, "incorrect trace parentage")
 		}
 	}
+	attribs := []attribute.KeyValue{
+		attribute.Bool(AttribTaskResultCompleted, completed),
+	}
 
-	return t.tracer.Start(ctx, "patchTaskResult", trace.WithSpanKind(trace.SpanKindInternal))
+	return t.tracer.Start(ctx, "patchTaskResult", trace.WithAttributes(attribs...), trace.WithSpanKind(trace.SpanKindInternal))
 }
 
 var SpanPersistUpdates = Span{
