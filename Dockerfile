@@ -17,6 +17,8 @@ RUN apk update && apk add --no-cache \
     bash \
     mailcap
 
+RUN mkdir -p /scratch-tmp && chmod 1777 /scratch-tmp
+
 WORKDIR /go/src/github.com/argoproj/argo-workflows
 COPY go.mod .
 COPY go.sum .
@@ -82,6 +84,7 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 FROM scratch AS argoexec-base
 
+COPY --from=builder /scratch-tmp /tmp
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=argoexec-build /etc/mime.types /etc/mime.types
 COPY hack/ssh_known_hosts /etc/ssh/
@@ -110,6 +113,7 @@ FROM scratch AS workflow-controller
 
 USER 8737
 
+COPY --from=builder /scratch-tmp /tmp
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
@@ -125,6 +129,7 @@ USER 8737
 
 WORKDIR /home/argo
 
+COPY --from=builder /scratch-tmp /tmp
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
