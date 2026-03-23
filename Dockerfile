@@ -80,8 +80,9 @@ RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static AS argoexec-base
+FROM scratch AS argoexec-base
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=argoexec-build /etc/mime.types /etc/mime.types
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
@@ -105,10 +106,11 @@ ENTRYPOINT [ "argoexec" ]
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static AS workflow-controller
+FROM scratch AS workflow-controller
 
 USER 8737
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
 COPY --chown=8737 --from=workflow-controller-build /go/src/github.com/argoproj/argo-workflows/dist/workflow-controller /bin/
@@ -117,12 +119,13 @@ ENTRYPOINT [ "workflow-controller" ]
 
 ####################################################################################################
 
-FROM gcr.io/distroless/static AS argocli
+FROM scratch AS argocli
 
 USER 8737
 
 WORKDIR /home/argo
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
 COPY --from=argocli-build /go/src/github.com/argoproj/argo-workflows/dist/argo /bin/
