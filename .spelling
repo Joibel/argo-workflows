@@ -235,6 +235,7 @@ pytorch
 qps
 ray
 rc2
+recompiles
 repo
 retryStrategy
 roadmap
@@ -301,6 +302,7 @@ versioning
 webHDFS
 webhook
 webhooks
+webpack
 webpack-dev-server
 workflow-controller-configmap
 workqueue
