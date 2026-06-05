@@ -28,7 +28,7 @@ concurrency:
 env:
   # Dry-run: render to the job summary instead of commenting/drafting.
   # Flip to "false" to go live.
-  DRY_RUN: "true"
+  DRY_RUN: "false"
 
 jobs:
   assess:
