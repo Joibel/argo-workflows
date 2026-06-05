@@ -32,3 +32,9 @@ func removeConflicts(m map[string]any) map[string]any {
 	}
 	return n
 }
+
+// testFlightUnused exists only to trigger the unused linter for the PR
+// readiness helper test flight.
+func testFlightUnused() string {
+	return "unused"
+}
