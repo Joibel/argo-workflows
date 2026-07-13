@@ -121,12 +121,14 @@ type WorkflowController struct {
 	maxStackDepth int
 
 	// datastructures to support the processing of workflows and workflow pods
-	wfInformer        cache.SharedIndexInformer
-	nsInformer        cache.SharedIndexInformer
-	wftmplInformer    wfextvv1alpha1.WorkflowTemplateInformer
-	cwftmplInformer   wfextvv1alpha1.ClusterWorkflowTemplateInformer
-	PodController     *pod.Controller // Currently public for woc to access, but would rather an accessor
-	configMapInformer cache.SharedIndexInformer
+	wfInformer      cache.SharedIndexInformer
+	nsInformer      cache.SharedIndexInformer
+	wftmplInformer  wfextvv1alpha1.WorkflowTemplateInformer
+	cwftmplInformer wfextvv1alpha1.ClusterWorkflowTemplateInformer
+	PodController   *pod.Controller // Currently public for woc to access, but would rather an accessor
+	// typedConfigMapInformer watches configmaps labelled with workflows.argoproj.io/configmap-type,
+	// used to resolve parameters sourced from configmaps and to GC memoization caches
+	typedConfigMapInformer cache.SharedIndexInformer
 	// controllerConfigMapInformer watches the controller's own configmap to reload configuration on change
 	controllerConfigMapInformer cache.SharedIndexInformer
 	// semaphoreConfigMapInformer watches configmaps in the managed namespace to requeue workflows waiting on a semaphore whose configuration changed
@@ -353,7 +355,7 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, workflowTTLWo
 
 	wfc.updateEstimatorFactory(ctx)
 
-	wfc.configMapInformer = wfc.newConfigMapInformer(ctx)
+	wfc.typedConfigMapInformer = wfc.newTypedConfigMapInformer(ctx)
 
 	// Create Synchronization Manager
 	wfc.createSynchronizationManager(ctx)
@@ -374,7 +376,7 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, workflowTTLWo
 
 	go wfc.wfInformer.Run(ctx.Done())
 	go wfc.wftmplInformer.Informer().Run(ctx.Done())
-	go wfc.configMapInformer.Run(ctx.Done())
+	go wfc.typedConfigMapInformer.Run(ctx.Done())
 	go wfc.wfTaskSetInformer.Informer().Run(ctx.Done())
 	go wfc.artGCTaskInformer.Informer().Run(ctx.Done())
 	go wfc.taskResultInformer.Run(ctx.Done())
@@ -389,7 +391,7 @@ func (wfc *WorkflowController) Run(ctx context.Context, wfWorkers, workflowTTLWo
 		nsInformerHasSynced,
 		wfc.wftmplInformer.Informer().HasSynced,
 		wfc.PodController.HasSynced(),
-		wfc.configMapInformer.HasSynced,
+		wfc.typedConfigMapInformer.HasSynced,
 		controllerConfigMapInformerHasSynced,
 		semaphoreConfigMapInformerHasSynced,
 		wfc.wfTaskSetInformer.Informer().HasSynced,
@@ -1248,7 +1250,7 @@ func (wfc *WorkflowController) instanceIDReq() labels.Requirement {
 	return util.InstanceIDRequirement(wfc.Config.InstanceID)
 }
 
-func (wfc *WorkflowController) newConfigMapInformer(ctx context.Context) cache.SharedIndexInformer {
+func (wfc *WorkflowController) newTypedConfigMapInformer(ctx context.Context) cache.SharedIndexInformer {
 	indexInformer := v1.NewFilteredConfigMapInformer(wfc.kubeclientset, wfc.GetManagedNamespace(), configMapResyncPeriod, cache.Indexers{
 		indexes.ConfigMapLabelsIndex: indexes.ConfigMapIndexFunc,
 	}, func(opts *metav1.ListOptions) {

@@ -331,7 +331,7 @@ func newController(ctx context.Context, options ...any) (context.CancelFunc, *Wo
 		_ = wfc.addWorkflowInformerHandlers(ctx)
 		wfc.PodController = pod.NewController(ctx, &wfc.Config, wfc.restConfig, "", wfc.kubeclientset, wfc.wfInformer, wfc.metrics, wfc.enqueueWfFromPodLabel)
 
-		wfc.configMapInformer = wfc.newConfigMapInformer(ctx)
+		wfc.typedConfigMapInformer = wfc.newTypedConfigMapInformer(ctx)
 		wfc.createSynchronizationManager(ctx)
 		_ = wfc.initManagers(ctx)
 
@@ -343,7 +343,7 @@ func newController(ctx context.Context, options ...any) (context.CancelFunc, *Wo
 		go wfc.taskResultInformer.Run(ctx.Done())
 		wfc.cwftmplInformer = informerFactory.Argoproj().V1alpha1().ClusterWorkflowTemplates()
 		go wfc.cwftmplInformer.Informer().Run(ctx.Done())
-		go wfc.configMapInformer.Run(ctx.Done())
+		go wfc.typedConfigMapInformer.Run(ctx.Done())
 		// wfc.waitForCacheSync() takes minimum 100ms, we can be faster
 		for _, c := range []cache.SharedIndexInformer{
 			wfc.wfInformer,
@@ -353,7 +353,7 @@ func newController(ctx context.Context, options ...any) (context.CancelFunc, *Wo
 			wfc.wfTaskSetInformer.Informer(),
 			wfc.artGCTaskInformer.Informer(),
 			wfc.taskResultInformer,
-			wfc.configMapInformer,
+			wfc.typedConfigMapInformer,
 		} {
 			for !c.HasSynced() {
 				time.Sleep(5 * time.Millisecond)
