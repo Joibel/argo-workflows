@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	gosync "sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	dynamicfake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/fake"
@@ -979,6 +981,90 @@ func TestNotifySemaphoreConfigUpdate(t *testing.T) {
 	controller.notifySemaphoreConfigUpdate(ctx, &cm)
 	time.Sleep(2 * time.Second)
 	assert.Equal(2, controller.wfQueue.Len())
+}
+
+func TestSemaphoreConfigMapInformer(t *testing.T) {
+	wf := wfv1.MustUnmarshalWorkflow(wfWithSema)
+	otherWf := wf.DeepCopy()
+	otherWf.Name = "other-wf"
+	otherWf.Spec.Synchronization.Semaphores[0].ConfigMapKeyRef.Name = "other-config"
+	ctx := logging.TestContext(t.Context())
+	cancel, controller := newController(ctx, wf, otherWf)
+	defer cancel()
+
+	require.Equal(t, 2, controller.wfQueue.Len())
+	for range 2 {
+		key, _ := controller.wfQueue.Get()
+		controller.wfQueue.Done(key)
+		controller.wfQueue.Forget(key)
+	}
+
+	cm := &apiv1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "my-config", Namespace: "default", ResourceVersion: "1", Labels: map[string]string{"argo": "config"}},
+		Data:       map[string]string{"workflow": "1"},
+	}
+	_, err := controller.kubeclientset.CoreV1().ConfigMaps("default").Create(ctx, cm, metav1.CreateOptions{})
+	require.NoError(t, err)
+	otherCM := &apiv1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{Name: "other-config", Namespace: "default", ResourceVersion: "1"},
+		Data:       map[string]string{"workflow": "1"},
+	}
+	_, err = controller.kubeclientset.CoreV1().ConfigMaps("default").Create(ctx, otherCM, metav1.CreateOptions{})
+	require.NoError(t, err)
+
+	// signal once the informer's watch is established so the update below cannot race it
+	watchEstablished := make(chan struct{})
+	var watchOnce gosync.Once
+	fakeClient := controller.kubeclientset.(*fake.Clientset)
+	fakeClient.PrependWatchReactor("configmaps", func(action k8stesting.Action) (bool, watch.Interface, error) {
+		w, err := fakeClient.Tracker().Watch(action.GetResource(), action.GetNamespace())
+		if err != nil {
+			return false, nil, err
+		}
+		watchOnce.Do(func() { close(watchEstablished) })
+		return true, w, nil
+	})
+
+	informer := controller.newSemaphoreConfigMapInformer(ctx)
+	go informer.Run(ctx.Done())
+	require.True(t, cache.WaitForCacheSync(ctx.Done(), informer.HasSynced))
+
+	// the add events from the initial sync notify the workflows waiting on the semaphores
+	require.Eventually(t, func() bool { return controller.wfQueue.Len() == 2 }, 10*time.Second, 100*time.Millisecond)
+	for range 2 {
+		key, _ := controller.wfQueue.Get()
+		controller.wfQueue.Done(key)
+		controller.wfQueue.Forget(key)
+	}
+
+	// the transform keeps only identifying metadata in the cache
+	obj, exists, err := informer.GetStore().GetByKey("default/my-config")
+	require.NoError(t, err)
+	require.True(t, exists)
+	cached, ok := obj.(*apiv1.ConfigMap)
+	require.True(t, ok)
+	assert.Equal(t, "my-config", cached.Name)
+	assert.Equal(t, "default", cached.Namespace)
+	assert.Equal(t, "1", cached.ResourceVersion)
+	assert.Empty(t, cached.Data)
+	assert.Empty(t, cached.Labels)
+
+	select {
+	case <-watchEstablished:
+	case <-time.After(10 * time.Second):
+		t.Fatal("timed out waiting for the informer's watch to be established")
+	}
+	cm.ResourceVersion = "2"
+	cm.Data["workflow"] = "2"
+	_, err = controller.kubeclientset.CoreV1().ConfigMaps("default").Update(ctx, cm, metav1.UpdateOptions{})
+	require.NoError(t, err)
+
+	// the update event notifies only the workflow waiting on the updated semaphore
+	require.Eventually(t, func() bool { return controller.wfQueue.Len() == 1 }, 10*time.Second, 100*time.Millisecond)
+	key, _ := controller.wfQueue.Get()
+	assert.Equal(t, "default/hello-world", key)
+	controller.wfQueue.Done(key)
+	controller.wfQueue.Forget(key)
 }
 
 func TestParallelismWithInitializeRunningWorkflows(t *testing.T) {
