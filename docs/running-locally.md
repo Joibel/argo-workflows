@@ -75,11 +75,13 @@ exact toolchain from source.
 
 Prebuilt [development container](https://containers.dev/) images are provided for both `amd64` and `arm64` containing all you need to develop Argo Workflows, without installing tools on your local machine. Provisioning a dev container is fully automated and typically takes ~1 minute.
 
+The container is the development shell above with the Nix part already done for you: the image has Nix installed and the whole shell built into its store, and a terminal opened in the workspace enters `nix develop` for you. So the tools are the same versions as everywhere else, and `nix develop` after a `flake.nix` change behaves the same way — it just has less to download.
+
 You can use the development container in a few different ways:
 
 1. [Visual Studio Code](https://code.visualstudio.com/) with [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers). Open your `argo-workflows` folder in VSCode and it should offer to use the development container automatically. VSCode will allow you to forward ports to allow your external browser to access the running components.
 1. [`devcontainer` CLI](https://github.com/devcontainers/cli), which the development shell provides. In your `argo-workflows` folder, run `make devcontainer-up` to start the container. Then, use `devcontainer exec --workspace-folder . /bin/bash` to get a shell where you can build the code. You can use any editor outside the container to edit code; any changes will be mirrored inside the container. Unlike the VS Code extension, the CLI does not forward ports to your host. The dev stack binds its services (UI `8080`, server `2746`, metrics `9090`, Tilt UI `10350`) to `0.0.0.0`, so reach them via the container's IP — `docker inspect <container> --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'`, then e.g. `http://<ip>:8080`.
-1. [GitHub Codespaces](https://github.com/codespaces). You can start editing as soon as VSCode is open, though you may want to wait for `pre-build.sh` to finish installing dependencies, building binaries, and setting up the cluster before running any commands in the terminal. Once you start running services (see next steps below), you can click on the "PORTS" tab in the VSCode terminal to see all forwarded ports. You can open the Web UI in a new tab from there.
+1. [GitHub Codespaces](https://github.com/codespaces). You can start editing as soon as VSCode is open, though you may want to wait for `pre-build.sh` to finish setting up the cluster before running any commands in the terminal. Once you start running services (see next steps below), you can click on the "PORTS" tab in the VSCode terminal to see all forwarded ports. You can open the Web UI in a new tab from there.
 
 Once you have entered the container, continue to [Developing Locally](#developing-locally).
 

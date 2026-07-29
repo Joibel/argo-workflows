@@ -42,8 +42,19 @@ permissions:
 
 jobs:
   linux:
-    name: Build development shell (x86_64-linux)
-    runs-on: ubuntu-24.04
+    name: Build development shell (${{ matrix.system }})
+    # aarch64-linux is not only for contributors on arm64 machines: the dev
+    # container image is built for both architectures and bakes this shell in,
+    # so a cold cache there means QEMU compiling every pinned tool.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - system: x86_64-linux
+            runner: ubuntu-24.04
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-nix
