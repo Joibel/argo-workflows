@@ -55,7 +55,9 @@ func TestEmissary(t *testing.T) {
 	})
 	t.Run("Sub-process", func(t *testing.T) {
 		_ = os.Remove(varRunArgo + "/ctr/main/stdout")
-		err = run(`(sleep 60; echo 'should not wait for sub-process')& echo "hello\c"`)
+		// `printf`, not `echo "hello\c"`: only dash reads that as "hello with no
+		// newline", and `sh` is bash on macOS and inside the development shell.
+		err = run(`(sleep 60; echo 'should not wait for sub-process')& printf hello`)
 		require.NoError(t, err)
 		var data []byte
 		data, err = os.ReadFile(varRunArgo + "/ctr/main/stdout")

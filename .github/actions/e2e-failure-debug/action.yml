@@ -5,25 +5,28 @@ description: >-
   guarded with `|| true` so one failing diagnostic doesn't skip the rest — a
   composite step otherwise aborts the whole action on the first failure.
 
+  Each step runs in the development shell, which is where `kubectl` comes from,
+  so the caller must have run .github/actions/setup-nix.
+
 runs:
   using: composite
   steps:
     - name: Failure debug - k3d server logs
-      shell: bash
+      shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
       run: docker logs k3d-k3s-default-server-0 || true
     - name: Failure debug - Controller/API logs
-      shell: bash
+      shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
       run: |
         kubectl -n argo logs deploy/workflow-controller --prefix --tail=-1 || true
         kubectl -n argo logs deploy/argo-server --prefix --tail=-1 || true
     - name: Failure debug - Tilt logs
-      shell: bash
+      shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
       run: '[ -e /tmp/tilt.log ] && cat /tmp/tilt.log || true'
     - name: Failure debug - describe Workflows
-      shell: bash
+      shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
       run: |
         kubectl get wf || true
         kubectl describe wf || true
     - name: Failure debug - Workflow Pod logs
-      shell: bash
+      shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
       run: kubectl logs --all-containers -l workflows.argoproj.io/workflow --prefix || true
