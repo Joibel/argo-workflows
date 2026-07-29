@@ -32,25 +32,71 @@
       # ---------------------------------------------------------------------
       # Pinned tool versions.
       #
-      # Renovate keeps these current; each is used exactly once below, so the
-      # version and its hash sit next to each other.
+      # Renovate keeps these current: it reads the `# renovate:` comments (see
+      # renovate.json) and bumps the version, and CI then runs
+      # hack/nix/update-hashes.sh on its branch to repair the hashes below.
+      # Each version is used exactly once, so the version and its hash sit next
+      # to each other.
+      #
+      # The entries with no `# renovate:` line are deliberate, and say why: they
+      # move as part of some larger change rather than on their own.
       # ---------------------------------------------------------------------
       toolVersions = {
+        # renovate: datasource=go depName=github.com/bufbuild/buf
         buf = "1.65.0";
+
+        # Held to patch releases: the generators run against the apimachinery
+        # in go.mod, so the minor moves when that does.
+        # renovate: datasource=go depName=k8s.io/code-generator
         codeGenerator = "0.35.1";
+
+        # renovate: datasource=go depName=sigs.k8s.io/controller-tools
         controllerTools = "0.18.0";
+
+        # Not Renovate's: cspell comes from nixpkgs and the check at the bottom
+        # of this file fails if nixpkgs moves off this version, so it follows
+        # the nixpkgs input rather than a bump of its own.
         cspell = "9.7.0";
+
+        # renovate: datasource=go depName=github.com/gogo/protobuf
         gogoProtobuf = "1.3.2";
+
+        # renovate: datasource=go depName=golang.org/x/tools
         goimports = "0.35.0";
+
+        # renovate: datasource=go depName=github.com/golangci/golangci-lint/v2
         golangciLint = "2.11.3";
+
+        # renovate: datasource=go depName=github.com/go-swagger/go-swagger
         goSwagger = "0.33.1";
+
+        # renovate: datasource=go depName=gotest.tools/gotestsum
         gotestsum = "1.12.3";
+
+        # renovate: datasource=go depName=github.com/grpc-ecosystem/grpc-gateway
         grpcGateway = "1.16.0";
+
+        # renovate: datasource=go depName=github.com/kitproj/kubeauto
         kubeauto = "0.0.7";
+
+        # Not Renovate's: this is the commit the checked-in OpenAPI definitions
+        # were generated from, deliberately older than the kube-openapi in
+        # go.mod. Moving it regenerates them, so it happens with that change —
+        # and `rev` below has to move with it.
         kubeOpenapi = "0.0.0-20220124234850-424119656bbf";
+
+        # renovate: datasource=go depName=github.com/vektra/mockery/v3
         mockery = "3.5.1";
+
+        # Not Renovate's: the Java SDK it generates is what downstream users
+        # compile against, so this moves only when the SDK is regenerated on
+        # purpose and the diff reviewed.
         openapiGenerator = "5.2.1";
+
+        # renovate: datasource=pypi depName=properdocs
         properdocs = "1.6.7";
+
+        # renovate: datasource=github-releases depName=kaplanelad/snipdoc
         snipdoc = "0.1.12";
       };
 
