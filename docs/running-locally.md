@@ -41,6 +41,21 @@ whatever the shell provides is what `make codegen`, `make lint` and `make test` 
 If you use [direnv](https://direnv.net), `direnv allow` once and the shell is entered whenever you `cd` into the repo.
 Install [nix-direnv](https://github.com/nix-community/nix-direnv) alongside it so that is instant.
 
+#### Binary cache
+
+Most of the shell comes from the public nixpkgs cache, but the pinned tools are built by this project and nobody else,
+so they are not in it. CI builds them for `x86_64-linux` and `aarch64-darwin` and pushes them to the
+[`argo-workflows`](https://app.cachix.org/cache/argo-workflows) [Cachix](https://cachix.org) cache. Point Nix at it and
+entering the shell is a download rather than a compile:
+
+```bash
+nix run nixpkgs#cachix -- use argo-workflows
+```
+
+That writes the cache and its public key into your Nix configuration; on a multi-user install it will ask for `sudo`,
+or tell you to add yourself to `trusted-users` first. It is optional — without it everything still works, it is just
+slower the first time and after each tool upgrade.
+
 #### Upgrading a tool
 
 Everything lives in `flake.nix`, in two tiers:
