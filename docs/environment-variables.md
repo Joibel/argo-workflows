@@ -22,7 +22,7 @@ This document outlines environment variables that can be used to customize behav
 | `ARGO_AGENT_PATCH_RATE`                  | `time.Duration`     | `DEFAULT_REQUEUE_TIME`                                                                      | Rate that the Argo Agent will patch the workflow task-set.                                                                                                                                                                                                               |
 | `ARGO_AGENT_CPU_LIMIT`                   | `resource.Quantity` | `100m`                                                                                      | CPU resource limit for the agent.                                                                                                                                                                                                                                        |
 | `ARGO_AGENT_MEMORY_LIMIT`                | `resource.Quantity` | `256m`                                                                                      | Memory resource limit for the agent.                                                                                                                                                                                                                                     |
-| `ARGO_POD_STATUS_CAPTURE_FINALIZER`      | `bool`              | `false`                                                                                     | The finalizer blocks the deletion of pods until the controller captures their status.
+| `ARGO_POD_STATUS_CAPTURE_FINALIZER`      | `bool`              | `false`                                                                                     | The finalizer blocks the deletion of pods until the controller captures their status. |
 | `BUBBLE_ENTRY_TEMPLATE_ERR`              | `bool`              | `true`                                                                                      | Whether to bubble up template errors to workflow.                                                                                                                                                                                                                        |
 | `CACHE_GC_PERIOD`                        | `time.Duration`     | `0s`                                                                                        | How often to perform memoization cache GC, which is disabled by default and can be enabled by providing a non-zero duration.                                                                                                                                             |
 | `CACHE_GC_AFTER_NOT_HIT_DURATION`        | `time.Duration`     | `30s`                                                                                       | When a memoization cache has not been hit after this duration, it will be deleted.                                                                                                                                                                                       |
@@ -101,8 +101,8 @@ spec:
 
 | Name                                   | Type            | Default | Description                                                                                            |
 |----------------------------------------|-----------------|---------|--------------------------------------------------------------------------------------------------------|
-| `ARGO_DEBUG_PAUSE_AFTER`               | `bool`          | `false` | Enable [Debug Pause](debug-pause.md) after step execution
-| `ARGO_DEBUG_PAUSE_BEFORE`              | `bool`          | `false` | Enable [Debug Pause](debug-pause.md) before step execution
+| `ARGO_DEBUG_PAUSE_AFTER`               | `bool`          | `false` | Enable [Debug Pause](debug-pause.md) after step execution |
+| `ARGO_DEBUG_PAUSE_BEFORE`              | `bool`          | `false` | Enable [Debug Pause](debug-pause.md) before step execution |
 | `ARTIFACT_S3_UPLOAD_THREADS`           | `int`               | `4`                                                                                         | Number of threads for artifact upload through S3. Default: 4.                                                                                                                                                                                                            |
 | `ARTIFACT_S3_UPLOAD_PART_SIZE_MIB`     | `int`               | ``                                                                                          | Size in MiB of the part of a Multipart upload. Default: let MinIO calculate automatically (16 MiB for file <= 156 GiB).                                                                                                                                                     |
 | `EXECUTOR_RETRY_BACKOFF_DURATION`      | `time.Duration` | `1s`    | The retry back-off duration when the workflow executor performs retries.                               |
@@ -132,10 +132,10 @@ data:
 
 | Name                                       | Type     | Default | Description                                                                                                             |
 |--------------------------------------------|----------|---------|-------------------------------------------------------------------------------------------------------------------------|
-| `ARGO_ARTIFACT_SERVER`                     | `bool`   | `true`  | Enable [Workflow Archive](workflow-archive.md) endpoints
-| `ARGO_PPROF`                               | `bool`   | `false` | Enable [`pprof`](https://go.dev/blog/pprof) endpoints
+| `ARGO_ARTIFACT_SERVER`                     | `bool`   | `true`  | Enable [Workflow Archive](workflow-archive.md) endpoints |
+| `ARGO_PPROF`                               | `bool`   | `false` | Enable [`pprof`](https://go.dev/blog/pprof) endpoints |
 | `ARGO_SERVER_MAX_ARTIFACT_UPLOAD_BYTES`    | `int`    | `1073741824` | Maximum total request body size accepted by the input artifact upload endpoint, in bytes. Requests over this size receive `413 Request Entity Too Large`.  |
-| `ARGO_SERVER_METRICS_AUTH`                 | `bool`   | `true`  | Enable auth on the `/metrics` endpoint
+| `ARGO_SERVER_METRICS_AUTH`                 | `bool`   | `true`  | Enable auth on the `/metrics` endpoint |
 | `CI_ONLY_DISABLE_ARTIFACT_SERVER_CHECKS`   | `bool`   | `false` | Disable validation checks for artifact plugin sidecars. For CI/testing use only.                                        |
 | `DISABLE_VALUE_LIST_RETRIEVAL_KEY_PATTERN` | `string` | `""`    | Disable the retrieval of the list of label values for keys based on this regular expression.                            |
 | `FIRST_TIME_USER_MODAL`                    | `bool`   | `true`  | Show this modal.                                                                                                        |
@@ -144,7 +144,7 @@ data:
 | `IP_KEY_FUNC_HEADERS`                      | `string` | `""`    | List of comma separated request headers containing IPs to use for rate limiting. For example, "X-Forwarded-For,X-Real-IP". By default, uses the request's remote IP address.          |
 | `NEW_VERSION_MODAL`                        | `bool`   | `true`  | Show this modal.                                                                                                        |
 | `POD_NAMES`                                | `string` | `v2`    | Whether to have pod names contain the template name (v2) or be the node id (v1) - should be set the same for Controller |
-| `SSO_DELEGATE_RBAC_TO_NAMESPACE`           | `bool`   | `false` | Enable [SSO RBAC Namespace Delegation](argo-server-sso.md#sso-rbac-namespace-delegation)
+| `SSO_DELEGATE_RBAC_TO_NAMESPACE`           | `bool`   | `false` | Enable [SSO RBAC Namespace Delegation](argo-server-sso.md#sso-rbac-namespace-delegation) |
 
 CLI parameters of the Server can be specified as environment variables with the `ARGO_` prefix.
 For example:

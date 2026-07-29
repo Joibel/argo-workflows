@@ -1,7 +1,7 @@
 # Config for `typos` (https://github.com/crate-ci/typos), which flags only known
 # misspellings, so no project-jargon dictionary is needed. Prose docs also get a
-# dictionary-based pass from cspell (.cspell.json). Version is pinned in the
-# Makefile and comes from nixpkgs in dev/nix.
+# dictionary-based pass from cspell (.cspell.json). The version comes from the
+# development shell (flake.nix).
 
 [files]
 extend-exclude = [

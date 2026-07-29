@@ -1,4 +1,3 @@
-USE_NIX ?= false
 GIT_TAG               := $(shell git describe --exact-match --tags --abbrev=0 2> /dev/null || echo untagged)
 ifeq ($(GIT_TAG),untagged)
 # "SNAPSHOT" is "latest" for Java
@@ -13,20 +12,16 @@ WD                    := $(shell echo "`pwd`/client")
 
 DOCKER = docker run --rm --user $(shell id -u):$(shell id -g) -v $(WD):/wd --workdir /wd
 MVN = $(DOCKER) -v $(HOME)/.m2:/tmp/.m2 -e JAVA_SDK_MAVEN_PASSWORD=${JAVA_SDK_MAVEN_PASSWORD} maven:3-openjdk-8 mvn -Duser.home=/tmp -s settings.xml
-CHOWN = chown -R $(shell id -u):$(shell id -g)
+
+# The generator comes from the development shell (see flake.nix), which pins the
+# version the published client is generated with.
+TOOL_OPENAPI_GENERATOR := openapi-generator-cli
 
 publish: generate
 	# https://help.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-apache-maven-for-use-with-github-packages
 	$(MVN) deploy -DskipTests -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/argoproj/argo-workflows
 
 generate:
-ifeq ($(USE_NIX), true)
-	chmod -R 777 client || exit 0
-	rm -rf $(WD)
-	nix build
-	cp -r result/data/client ./client
-	chmod -R u+w ./client
-else 
 	rm -Rf $(WD)
 	mkdir -p $(WD)
 	cp settings.xml $(WD)/settings.xml
@@ -34,11 +29,11 @@ else
 		sed 's/io.k8s.api.core.v1.//' | \
 		sed 's/io.k8s.apimachinery.pkg.apis.meta.v1.//' \
 		> $(WD)/swagger.json
-	$(DOCKER) openapitools/openapi-generator-cli:v5.2.1 \
+	$(TOOL_OPENAPI_GENERATOR) \
 		generate \
-		-i /wd/swagger.json \
+		-i $(WD)/swagger.json \
 		-g java \
-		-o /wd \
+		-o $(WD) \
 		-p hideGenerationTimestamp=true \
 		-p serializationLibrary=jsonb \
 		-p dateLibrary=java8 \
@@ -75,11 +70,8 @@ else
 		--import-mappings VolumeDevice=io.kubernetes.client.openapi.models.V1VolumeDevice \
 		--import-mappings VolumeMount=io.kubernetes.client.openapi.models.V1VolumeMount \
 		--generate-alias-as-model
-	# https://vsupalov.com/docker-shared-permissions/#set-the-docker-user-when-running-your-container
-	$(CHOWN) $(WD) || sudo $(CHOWN) $(WD)
 	# adding kubernetes-client
 	cd client && sed 's/<dependencies>/<dependencies><dependency><groupId>io.kubernetes<\/groupId><artifactId>client-java<\/artifactId><version>14.0.1<\/version><\/dependency>/g' pom.xml > tmp && mv tmp pom.xml
-endif
 
 client/pom.xml: generate
 
