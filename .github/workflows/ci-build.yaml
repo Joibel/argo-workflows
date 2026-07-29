@@ -44,6 +44,9 @@ jobs:
               - Tiltfile
               - Dockerfile
               - hack/tilt/**
+              # the toolchain these jobs run with
+              - flake.nix
+              - flake.lock
             tests: &tests
               - *common
               - cmd/**
@@ -447,29 +450,17 @@ jobs:
       GOPATH: /home/runner/go
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26"
-          cache: true
-      - name: Install protoc
-        run: |
-          set -eux -o pipefail
-          curl -OL https://github.com/protocolbuffers/protobuf/releases/download/v3.19.4/protoc-3.19.4-linux-x86_64.zip
-          sudo unzip -o protoc-3.19.4-linux-x86_64.zip -d /usr/local bin/protoc
-          sudo unzip -o protoc-3.19.4-linux-x86_64.zip -d /usr/local 'include/*'
-          sudo chmod +x /usr/local/bin/protoc
-          sudo find /usr/local/include -type f | xargs sudo chmod a+r
-          sudo find /usr/local/include -type d | xargs sudo chmod a+rx
-          ls /usr/local/include/google/protobuf/
-      - name: Pull OpenAPI Generator CLI Docker image
-        run: |
-          docker pull openapitools/openapi-generator-cli:v5.4.0 &
-          docker pull openapitools/openapi-generator-cli:v5.2.1 &
+      # protoc and its plugins, the Kubernetes code and OpenAPI generators,
+      # mockery, controller-gen and the OpenAPI Generator the Java SDK is built
+      # with all come from the development shell, at the versions the generated
+      # files checked in alongside this were produced with.
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/go-cache
       - name: Create symlinks
         run: |
           mkdir -p /home/runner/go/src/github.com/argoproj
           ln -s "$PWD" /home/runner/go/src/github.com/argoproj/argo-workflows
-      - run: make codegen -B STATIC_FILES=false
+      - run: nix develop --command make codegen -B STATIC_FILES=false
       # if codegen makes changes that are not in the PR, fail the build
       - name: Check if codegen made changes not present in the PR
         run: git diff --exit-code
@@ -484,11 +475,12 @@ jobs:
       GOPATH: /home/runner/go
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26"
-          cache: true
-      - run: make lint STATIC_FILES=false
+      # golangci-lint decides whether this job passes, so it comes from the
+      # development shell at the pinned version rather than whatever the runner
+      # image or a floating install happens to have.
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/go-cache
+      - run: nix develop --command make lint STATIC_FILES=false
       # if lint makes changes that are not in the PR, fail the build
       - name: Check if lint made changes not present in the PR
         run: git diff --exit-code
