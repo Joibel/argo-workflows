@@ -195,7 +195,7 @@ endif
 # -- file lists
 # These variables are only used as prereqs for the below targets, and we don't want to run them for other targets
 # because the "go list" calls are very slow
-ifneq (,$(filter dist/argoexec dist/workflow-controller dist/argo dist/argo-% docs/cli/argo.md,$(MAKECMDGOALS)))
+ifneq (,$(filter dist/argoexec dist/argoexec.exe dist/workflow-controller dist/argo dist/argo-% docs/cli/argo.md,$(MAKECMDGOALS)))
 HACK_PKG_FILES_AS_PKGS ?= false
 ifeq ($(HACK_PKG_FILES_AS_PKGS),false)
 	ARGOEXEC_PKG_FILES        := $(shell go list -f '{{ join .Deps "\n" }}' ./cmd/argoexec/ |  grep 'argoproj/argo-workflows/v4/' | xargs go list -f '{{ range $$file := .GoFiles }}{{ print $$.ImportPath "/" $$file "\n" }}{{ end }}' | cut -c 39-)
@@ -334,11 +334,27 @@ else
 	CGO_ENABLED=0 go build -v -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS} -extldflags -static' -o $@ ./cmd/argoexec
 endif
 
+# The Windows executor is cross-compiled here rather than inside
+# Dockerfile.windows: a Windows container cannot rebuild the generated OpenAPI
+# code, and this way the release needs no Go toolchain on the Windows runner.
+dist/argoexec.exe: $(ARGOEXEC_PKG_FILES) vendor/modules.txt
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -v -gcflags '${GCFLAGS}' -ldflags '${LDFLAGS} -extldflags -static' -o $@ ./cmd/argoexec
+
+# The image stages only assemble, so each image needs its binary built first.
+# A recursive make is what gets the binary named as a goal, which is what makes
+# the Makefile work out its (expensive to list) source files.
+argocli-image:              BINARY := dist/argo
+workflow-controller-image:  BINARY := dist/workflow-controller
+argoexec-image:             BINARY := dist/argoexec
+argoexec-nonroot-image:     BINARY := dist/argoexec
+# the released CLI image serves the UI, whatever branch it is built from
+argocli-image:              BINARY_ARGS := STATIC_FILES=true
+
 argoexec-image: ## Build the executor image
 argoexec-nonroot-image:
 
 %-image:
-	[ ! -e dist/$* ] || mv dist/$* .
+	$(MAKE) $(BINARY) $(BINARY_ARGS)
 	# Special handling for argoexec-nonroot to create argoexec:VERSION-nonroot instead of argoexec-nonroot:VERSION
 	if [ "$*" = "argoexec-nonroot" ]; then \
 		image_name="$(IMAGE_NAMESPACE)/argoexec:$(VERSION)-nonroot"; \
@@ -347,14 +363,10 @@ argoexec-nonroot-image:
 	fi; \
 	docker buildx build \
 		--platform $(TARGET_PLATFORM) \
-		--build-arg GIT_COMMIT=$(GIT_COMMIT) \
-		--build-arg GIT_TAG=$(GIT_TAG) \
-		--build-arg GIT_TREE_STATE=$(GIT_TREE_STATE) \
 		-t $$image_name \
 		--target $* \
 		--load \
 		.; \
-	[ ! -e $* ] || mv $* dist/; \
 	docker run --rm -t $$image_name version; \
 	if [ $(K3D) = true ]; then \
 		k3d image import -c $(K3D_CLUSTER_NAME) $$image_name; \

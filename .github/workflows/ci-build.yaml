@@ -315,6 +315,9 @@ jobs:
       # `actions/setup-java` installed a JDK, not Maven.
       - uses: ./.github/actions/setup-nix
       - uses: ./.github/actions/go-cache
+      # the production argocli image serves the UI, and its bundle is now built
+      # here rather than inside the image
+      - uses: ./.github/actions/yarn-cache
       - name: Cache the Maven repository
         # `actions/setup-java` cached this as a side effect; only the Java SDK
         # leg builds anything with Maven, so restore it only there.

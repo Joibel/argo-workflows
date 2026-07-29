@@ -64,13 +64,6 @@ if not ctx.startswith('k3d-'):
 allow_k8s_contexts(ctx)
 
 IMAGE_NS = 'quay.io/argoproj'
-# Pass the same version metadata the host Makefile computes, so in-cluster
-# binaries report the same version as host-built ones (`./dist/argo`): the CLI
-# prints a version-mismatch warning that corrupts e2e tests' parsed output.
-GIT_COMMIT = str(local('git rev-parse HEAD', quiet=True)).strip()
-GIT_TAG = str(local('git describe --exact-match --tags --abbrev=0 2>/dev/null || echo untagged', quiet=True)).strip()
-GIT_TREE_STATE = str(local('[ -z "$(git status --porcelain)" ] && echo clean || echo dirty', quiet=True)).strip()
-BUILD_ARGS = '--build-arg GIT_COMMIT=%s --build-arg GIT_TAG=%s --build-arg GIT_TREE_STATE=%s' % (GIT_COMMIT, GIT_TAG, GIT_TREE_STATE)
 
 # The argo CRDs are too large for client-side apply (the last-applied
 # annotation exceeds 256KB), so apply them server-side out of band, like
@@ -189,9 +182,14 @@ def k3d_import(images):
     imp = 'k3d image import --mode direct -c %s %s' % (cluster, images)
     return '(%s || (sleep 5 && %s))' % (imp, imp)
 
+# The image stages only assemble binaries, so every build is preceded by a
+# compile — `prebuild`, or a local_resource that owns it. Compiling on the host
+# is also what makes in-cluster binaries report the same version as host-built
+# ones (`./dist/argo`): the CLI prints a version-mismatch warning otherwise,
+# which corrupts e2e tests' parsed output.
 def k3d_build(ref, target, deps, prebuild=None, canonical=None):
     steps = ([prebuild] if prebuild else []) + [
-        'docker build -f Dockerfile %s --target %s -t $EXPECTED_REF .' % (BUILD_ARGS, target),
+        'docker build -f Dockerfile --target %s -t $EXPECTED_REF .' % target,
     ]
     images = '$EXPECTED_REF'
     if canonical:
@@ -212,12 +210,15 @@ exec_src = ['cmd/argoexec', 'workflow', 'config', 'errors', 'pkg', 'util', 'Dock
 CLI_CANONICAL = IMAGE_NS + '/argocli:latest'
 
 if is_ci:
-    # CI builds the real production images from source for parity.
-    k3d_build(IMAGE_NS + '/workflow-controller', 'workflow-controller', ctrl_src + ['ui', 'api', 'Dockerfile'])
+    # CI builds the real production images from source for parity. Those images
+    # only assemble binaries, so each build compiles its own first — with the
+    # UI baked in, as a release build has it.
+    k3d_build(IMAGE_NS + '/workflow-controller', 'workflow-controller', ctrl_src + ['Dockerfile'],
+        prebuild='make dist/workflow-controller')
     cli_target = 'argocli'
     cli_deps = cli_src + ['ui', 'api', 'Dockerfile']
-    cli_prebuild = None
-    exec_prebuild = None
+    cli_prebuild = 'make dist/argo STATIC_FILES=true'
+    exec_prebuild = 'make dist/argoexec'
     exec_target = 'argoexec'
 else:
     # Dev: compile each binary once on the host; the dev images just COPY it in.
@@ -246,16 +247,18 @@ if api:
         cli_trigger = TRIGGER_MODE_MANUAL if debug_server else TRIGGER_MODE_AUTO
         local_resource('cli-compile', cmd='make dist/argo STATIC_FILES=false' + cli_gcflags,
             deps=cli_src, trigger_mode=cli_trigger, labels=['compile'])
-    k3d_build(IMAGE_NS + '/argocli', cli_target, cli_deps, canonical=CLI_CANONICAL)
+        # the resource above owns the compile, and watches the sources for it
+        cli_prebuild = None
+    k3d_build(IMAGE_NS + '/argocli', cli_target, cli_deps, prebuild=cli_prebuild, canonical=CLI_CANONICAL)
 else:
     cli_cmd = ' && '.join(([cli_prebuild] if cli_prebuild else []) + [
-        'docker build -f Dockerfile %s --target %s -t %s .' % (BUILD_ARGS, cli_target, CLI_CANONICAL),
+        'docker build -f Dockerfile --target %s -t %s .' % (cli_target, CLI_CANONICAL),
         k3d_import(CLI_CANONICAL),
     ])
     local_resource('argocli-image', cmd=cli_cmd, deps=cli_deps, labels=['images'])
 
 exec_cmd = ' && '.join(([exec_prebuild] if exec_prebuild else []) + [
-    'docker build -f Dockerfile %s --target %s -t %s/argoexec:latest .' % (BUILD_ARGS, exec_target, IMAGE_NS),
+    'docker build -f Dockerfile --target %s -t %s/argoexec:latest .' % (exec_target, IMAGE_NS),
     k3d_import('%s/argoexec:latest' % IMAGE_NS),
 ])
 local_resource('argoexec-image', cmd=exec_cmd, deps=exec_src, labels=['images'])
