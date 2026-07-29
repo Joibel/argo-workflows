@@ -427,6 +427,7 @@
             # -- pinned: SDKs
             argoTools.openapi-generator-cli
             jdk
+            maven
 
             # -- pinned: not in nixpkgs at all
             argoTools.kubeauto
