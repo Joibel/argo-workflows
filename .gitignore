@@ -18,7 +18,6 @@ debug.test
 git-ask-pass.sh
 *.iml
 /coverage.out
-.envrc
 /.vendor-new
 /kustomize
 /workflow-controller
@@ -57,11 +56,8 @@ result
 /ui/playwright-report/
 /ui/test-results/
 /ui/e2e/.auth/
-.devenv
-.devenv.flake.nix
+# direnv's cache of the nix devShell (see .envrc)
+.direnv/
 .*-vendor
 proto_vendor
 .github.com
-.go/
-.goenv/
-.gocache/

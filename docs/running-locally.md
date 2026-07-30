@@ -4,12 +4,57 @@
 
 You have two options for setting up your development environment:
 
-1. Use the [Dev Container](#development-container), either locally or via [GitHub Codespaces](https://github.com/codespaces). This is usually the fastest and easiest way to get started.
-1. [Manual installation](#manual-installation) of the necessary tooling. This requires a basic understanding of administering Kubernetes and package management for your OS.
+1. The [development shell](#development-shell), which uses [Nix](https://nixos.org) to give you every tool at the
+   version this project expects. This is how the project is developed and the only supported way to run the tooling
+   directly on your machine.
+1. The [Dev Container](#development-container), either locally or via [GitHub Codespaces](https://github.com/codespaces).
+   Use this if you would rather not install Nix.
 
 ### Initial Local Setup
 
 Unless you're using GitHub Codespaces, the first step is cloning the Git repo into `$GOPATH/src/github.com/argoproj/argo-workflows`. Any other path will break the code generation.
+
+You will also need [Docker](https://docs.docker.com/get-docker/) — Nix does not manage it, since it is a daemon rather
+than a tool — and the following entries in your `/etc/hosts` file:
+
+```text
+127.0.0.1 dex
+127.0.0.1 minio
+127.0.0.1 postgres
+127.0.0.1 mysql
+127.0.0.1 azurite
+```
+
+### Development Shell
+
+[Install Nix](https://nixos.org/download.html), then enable flakes by adding `experimental-features = nix-command flakes`
+to either `~/.config/nix/nix.conf` (single-user install) or `/etc/nix/nix.conf` (multi-user install). From the repo root:
+
+```bash
+nix develop
+```
+
+That gives you a shell with the Go toolchain, the code generators, the linters, the docs tooling and the local cluster
+tools (`k3d`, `tilt`, `kubectl`) all on `PATH`. The Makefile is a task runner only: it never installs a tool, so
+whatever the shell provides is what `make codegen`, `make lint` and `make test` use.
+
+If you use [direnv](https://direnv.net), `direnv allow` once and the shell is entered whenever you `cd` into the repo.
+Install [nix-direnv](https://github.com/nix-community/nix-direnv) alongside it so that is instant.
+
+#### Upgrading a tool
+
+Everything lives in `flake.nix`, in two tiers:
+
+* **Pinned.** Anything whose version is part of a contract — it decides what generated code, lint results or test
+  output look like. Each has an explicit version and hash. To upgrade one, change its entry in `toolVersions` and
+  rebuild: Nix will report the hash mismatch and print the hash to paste in. Go tools need both the source `hash` and
+  the `vendorHash` updating; the second only shows up once the first is right.
+* **Floating.** Editors, clients and the local cluster, taken from nixpkgs as-is. These move when the `nixpkgs` input
+  moves — `nix flake update` — rather than one at a time.
+
+The Go toolchain is not listed in either tier: it is read straight from the `go` directive in `go.mod`. When nixpkgs
+lags behind that version, the flake tells you to add the Go source tarball's hash to `goSrcHashes` and builds that
+exact toolchain from source.
 
 ### Development Container
 
@@ -18,7 +63,7 @@ Prebuilt [development container](https://containers.dev/) images are provided fo
 You can use the development container in a few different ways:
 
 1. [Visual Studio Code](https://code.visualstudio.com/) with [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers). Open your `argo-workflows` folder in VSCode and it should offer to use the development container automatically. VSCode will allow you to forward ports to allow your external browser to access the running components.
-1. [`devcontainer` CLI](https://github.com/devcontainers/cli). In your `argo-workflows` folder, run `make devcontainer-up`, which will automatically install the CLI and start the container. Then, use `devcontainer exec --workspace-folder . /bin/bash` to get a shell where you can build the code. You can use any editor outside the container to edit code; any changes will be mirrored inside the container. Unlike the VS Code extension, the CLI does not forward ports to your host. The dev stack binds its services (UI `8080`, server `2746`, metrics `9090`, Tilt UI `10350`) to `0.0.0.0`, so reach them via the container's IP — `docker inspect <container> --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'`, then e.g. `http://<ip>:8080`.
+1. [`devcontainer` CLI](https://github.com/devcontainers/cli), which the development shell provides. In your `argo-workflows` folder, run `make devcontainer-up` to start the container. Then, use `devcontainer exec --workspace-folder . /bin/bash` to get a shell where you can build the code. You can use any editor outside the container to edit code; any changes will be mirrored inside the container. Unlike the VS Code extension, the CLI does not forward ports to your host. The dev stack binds its services (UI `8080`, server `2746`, metrics `9090`, Tilt UI `10350`) to `0.0.0.0`, so reach them via the container's IP — `docker inspect <container> --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'`, then e.g. `http://<ip>:8080`.
 1. [GitHub Codespaces](https://github.com/codespaces). You can start editing as soon as VSCode is open, though you may want to wait for `pre-build.sh` to finish installing dependencies, building binaries, and setting up the cluster before running any commands in the terminal. Once you start running services (see next steps below), you can click on the "PORTS" tab in the VSCode terminal to see all forwarded ports. You can open the Web UI in a new tab from there.
 
 Once you have entered the container, continue to [Developing Locally](#developing-locally).
@@ -27,26 +72,7 @@ The container runs [k3d](https://k3d.io/) via [docker-in-docker](https://github.
 
 Note for Windows: configure [`.wslconfig`](https://docs.microsoft.com/en-us/windows/wsl/wsl-config#configuration-setting-for-wslconfig) to limit memory usage by the WSL2 to prevent VSCode OOM.
 
-### Manual Installation
-
-To build on your own machine without using the Dev Container you will need:
-
-* [Go](https://golang.org/dl/)
-* [Yarn](https://classic.yarnpkg.com/en/docs/install/#mac-stable)
-* [Docker](https://docs.docker.com/get-docker/)
-* [`protoc`](http://google.github.io/proto-lens/installing-protoc.html)
-* [`node`](https://nodejs.org/download/release/latest-v16.x/) for running the UI
-* [`k3d`](https://k3d.io/) to run a local Kubernetes cluster
-* [Tilt](https://tilt.dev/) to build images and run Argo in that cluster
-* The following entries in your `/etc/hosts` file:
-
-    ```text
-    127.0.0.1 dex
-    127.0.0.1 minio
-    127.0.0.1 postgres
-    127.0.0.1 mysql
-    127.0.0.1 azurite
-    ```
+### The Local Cluster
 
 We use [k3d](https://k3d.io/) for the local Kubernetes cluster since it is fast and lets you test RBAC set-up. You don't
 need to create the cluster by hand — `make start` (below) runs `make k3d-up`, which creates it if needed (pinned to a

@@ -6,3 +6,9 @@ MD007:
 MD024:
   siblings_only: true
 MD034: false
+# Rules added after markdownlint-cli 0.33, which the docs have never been
+# written to. Turning either on is a docs change, not a tooling one.
+# link text should be descriptive, i.e. not "here" or "link"
+MD059: false
+# table pipes should line up
+MD060: false
