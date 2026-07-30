@@ -248,8 +248,8 @@ define protoc
     mkdir -p $(GOPATH)/src github.com/argoproj
     [ -e github.com/argoproj/argo-workflows ] || ln -s ../.. github.com/argoproj/argo-workflows
     [ -e v4 ] || ln -s . v4
+    # protoc finds the well-known types next to its own binary, so the include paths here are only ours
     protoc \
-      -I /usr/local/include \
       -I $(CURDIR) \
       -I $(CURDIR)/proto_vendor \
       --gogofast_out=plugins=grpc:$(GOPATH)/src \
