@@ -593,8 +593,8 @@ dist/argosay:
 	cp test/e2e/images/argosay/v2/argosay dist/
 
 # The development shell supplies tilt and k3d, so these two targets exist only
-# for the environments that do not use it yet: CI and the dev container. They go
-# when those move to the flake.
+# for the dev container, which does not use it yet. They go when it moves to the
+# flake.
 
 # renovate: datasource=github-releases depName=tilt-dev/tilt
 TILT_VERSION          ?= 0.37.3
@@ -609,9 +609,8 @@ tilt: ## Install the pinned Tilt to $(GOPATH)/bin if not already present
 		dir=$$(go env GOPATH)/bin ; mkdir -p "$$dir" ; \
 		echo "installing tilt v$(TILT_VERSION) to $$dir" ; \
 		: "tilt can't be go installed (its go.mod has replace directives), so it" ; \
-		: "comes from GitHub's release CDN. CI builds it once (the e2e-tools job)" ; \
-		: "and shares it across the matrix, rather than fetching it in 14 parallel" ; \
-		: "jobs (which throttles the CDN) — so no download retries are needed." ; \
+		: "comes from GitHub's release CDN. One download per dev container build" ; \
+		: "doesn't need retries; CI gets tilt from the shell, not from here." ; \
 		: "Download to a temp file so a truncated download fails tar cleanly." ; \
 		tmp=$$(mktemp) ; \
 		curl -fsSL "https://github.com/tilt-dev/tilt/releases/download/v$(TILT_VERSION)/tilt.$(TILT_VERSION).$$os.$$arch.tar.gz" -o "$$tmp" \
@@ -625,8 +624,8 @@ k3d: ## Install the pinned k3d to $(GOPATH)/bin if not already present
 	else \
 		echo "installing k3d v$${K3D_VERSION}" ; \
 		: "go install pulls from the module proxy (proxy.golang.org), which is" ; \
-		: "far more reliable under CI load than GitHub's release-asset CDN. The" ; \
-		: "ldflags stamp the version k3d reports and uses to tag its helper image" ; \
+		: "more reliable than GitHub's release-asset CDN. The ldflags stamp the" ; \
+		: "version k3d reports and uses to tag its helper image" ; \
 		go install -ldflags "-X github.com/k3d-io/k3d/v5/version.Version=v$${K3D_VERSION}" \
 			github.com/k3d-io/k3d/v5@v$${K3D_VERSION} ; \
 	fi

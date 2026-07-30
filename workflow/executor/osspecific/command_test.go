@@ -17,10 +17,15 @@ import (
 func TestSimpleStartCloser(t *testing.T) {
 	ctx := logging.TestContext(t.Context())
 	shell := "sh"
+	// `echo "...\c"` drops the trailing newline under dash, but prints the
+	// backslash verbatim under bash — which is what `sh` is on macOS and inside
+	// the development shell. `printf` means the same thing under both.
+	command := `printf '%s' "A123456789B123456789C123456789D123456789E123456789"`
 	if runtime.GOOS == "windows" {
 		shell = "pwsh.exe"
+		command = `echo "A123456789B123456789C123456789D123456789E123456789\c"`
 	}
-	cmd := exec.CommandContext(ctx, shell, "-c", `echo "A123456789B123456789C123456789D123456789E123456789\c"`)
+	cmd := exec.CommandContext(ctx, shell, "-c", command)
 	var stdoutWriter bytes.Buffer
 	slowWriter := SlowWriter{
 		&stdoutWriter,

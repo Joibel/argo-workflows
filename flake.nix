@@ -459,8 +459,14 @@
           # Nix's Go sets its own GOROOT; a stale one inherited from the host
           # (a Homebrew or asdf install, say) makes it build against the wrong
           # standard library.
+          #
+          # Nix also points TMPDIR at a directory of its own, whose name is 17
+          # characters longer than /tmp. Go tests that bind a unix socket under
+          # `t.TempDir()` then run past the 108-byte sun_path limit and fail
+          # only inside the shell, so hand TMPDIR back to the platform default.
           shellHook = ''
             unset GOROOT
+            unset TMPDIR TMP TEMP TEMPDIR
           '';
         };
 

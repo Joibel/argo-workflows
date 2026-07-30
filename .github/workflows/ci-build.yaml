@@ -134,11 +134,11 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26"
-          cache: true
-      - run: make test STATIC_FILES=false GOTEST='go test -p 20 -covermode=atomic -coverprofile=coverage.out'
+      # Go and gotestsum come from the development shell, so the tests run on
+      # the toolchain go.mod asks for and report through the pinned runner.
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/go-cache
+      - run: nix develop --command make test STATIC_FILES=false GOTEST='go test -p 20 -covermode=atomic -coverprofile=coverage.out'
       - name: Upload test results
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -164,6 +164,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # The development shell is Linux and macOS only, so Windows keeps its own
+      # Go install; the version below has to be kept in step with go.mod by hand.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: "1.26"
@@ -181,40 +183,9 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  e2e-tools:
-    name: E2E Tools
-    needs: [ changed-files ]
-    # also required by e2e-ui (runs on ui-only changes); keep this condition a
-    # superset of e2e-ui's, else a skipped dependency cascades and e2e-ui is
-    # silently skipped on ui-only PRs
-    if: ${{ needs.changed-files.outputs.e2e-tests == 'true' || needs.changed-files.outputs.ui == 'true' }}
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26"
-          cache: true
-      - name: Build k3d and Tilt once
-        # The whole e2e matrix shares these binaries via the artifact below, so
-        # we hit the k3d module proxy and the Tilt release CDN once each — not in
-        # ~14 parallel jobs, which throttles the CDN. This is why neither install
-        # needs download retries.
-        run: |
-          make k3d tilt
-          mkdir -p tools-bin
-          cp "$(go env GOPATH)/bin/k3d" "$(go env GOPATH)/bin/tilt" tools-bin/
-      - name: Upload tools
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: e2e-tools
-          path: tools-bin
-          if-no-files-found: error
-
   e2e-tests:
     name: E2E Tests
-    needs: [ changed-files, e2e-tools ]
+    needs: [ changed-files ]
     if: ${{ needs.changed-files.outputs.e2e-tests == 'true' }}
     runs-on: ubuntu-24.04
     # These tests usually finish in ~25m, but occasionally they take much longer due to resource
@@ -223,6 +194,13 @@ jobs:
     env:
       KUBECONFIG: /home/runner/.kube/config
       E2E_ENV_FACTOR: 2
+    defaults:
+      run:
+        # Every step below wants something from the development shell — Tilt,
+        # k3d, kubectl, Go, gotestsum — so the job runs in it rather than
+        # prefixing each `run` with `nix develop --command`. Everything the
+        # runner image provides (Docker above all) is still on PATH behind it.
+        shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
     strategy:
       fail-fast: false
       matrix:
@@ -331,17 +309,23 @@ jobs:
             use-api: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      # The JDK the Java SDK suite builds with comes from the shell too — it is
+      # pinned there alongside the OpenAPI Generator that produced the client.
+      # Maven itself still comes from the runner image, as it always did:
+      # `actions/setup-java` installed a JDK, not Maven.
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/go-cache
+      - name: Cache the Maven repository
+        # `actions/setup-java` cached this as a side effect; only the Java SDK
+        # leg builds anything with Maven, so restore it only there.
+        if: ${{ matrix.test == 'test-java-sdk' }}
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          go-version: "1.26"
-          cache: true
-      - name: Install Java for the SDK
-        if: ${{matrix.test == 'test-java-sdk'}}
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
-        with:
-          java-version: '8'
-          distribution: adopt
-          cache: maven
+          path: ~/.m2/repository
+          # the client pom is generated, so key on what generates it
+          key: ${{ runner.os }}-maven-${{ hashFiles('sdks/java/tests/pom.xml', 'sdks/java/Makefile') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
       - name: Set up k3d cluster and E2E tooling
         uses: ./.github/actions/e2e-cluster-up
         with:
@@ -421,18 +405,13 @@ jobs:
         # see https://github.com/orgs/community/discussions/9141#discussioncomment-2296809 and https://github.com/orgs/community/discussions/26822#discussioncomment-3305794
   e2e-tests-composite-result:
     name: E2E Tests - Composite result
-    needs: [ e2e-tools, e2e-tests, e2e-ui ]
+    needs: [ e2e-tests, e2e-ui ]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     steps:
       - run: |
-          tools="${{ needs.e2e-tools.result }}"
           result="${{ needs.e2e-tests.result }}"
           ui="${{ needs.e2e-ui.result }}"
-          # a tools failure skips the dependent jobs, which must not count as a pass
-          if [[ $tools == "failure" ]]; then
-            exit 1
-          fi
           # mark as successful even if skipped (e.g. a PR that touches neither)
           if [[ ( $result == "success" || $result == "skipped" ) && ( $ui == "success" || $ui == "skipped" ) ]]; then
             exit 0
@@ -496,13 +475,15 @@ jobs:
     timeout-minutes: 6
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+    defaults:
+      run:
+        # Node and Yarn come from the development shell, so the bundle CI builds
+        # is the one built locally; every step here needs them.
+        shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24" # change in all GH Workflows
-          cache: yarn
-          cache-dependency-path: ui/yarn.lock
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/yarn-cache
       - run: yarn --cwd ui install
       - run: yarn --cwd ui build
       - run: yarn --cwd ui test
@@ -518,7 +499,7 @@ jobs:
 
   e2e-ui:
     name: E2E UI
-    needs: [ changed-files, e2e-tools ]
+    needs: [ changed-files ]
     if: ${{ needs.changed-files.outputs.ui == 'true' || needs.changed-files.outputs.e2e-tests == 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
@@ -530,17 +511,15 @@ jobs:
       # argo-server serves the production UI bundle at :2746. Point Playwright
       # there — this also gives production-bundle coverage.
       ARGO_UI_BASE_URL: http://localhost:2746
+    defaults:
+      run:
+        # As in e2e-tests: Tilt, k3d, kubectl, Node and Yarn all come from the
+        # development shell, so the whole job runs in it.
+        shell: nix develop --command bash --noprofile --norc -eo pipefail {0}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version: "1.26"
-          cache: true
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24" # change in all GH Workflows
-          cache: yarn
-          cache-dependency-path: ui/yarn.lock
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/yarn-cache
       - name: Set up k3d cluster and E2E tooling
         uses: ./.github/actions/e2e-cluster-up
       - name: Install UI dependencies and Playwright browser
