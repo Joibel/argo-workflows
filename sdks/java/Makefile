@@ -10,21 +10,26 @@ endif
 # work dir
 WD                    := $(shell echo "`pwd`/client")
 
-DOCKER = docker run --rm --user $(shell id -u):$(shell id -g) -v $(WD):/wd --workdir /wd
-MVN = $(DOCKER) -v $(HOME)/.m2:/tmp/.m2 -e JAVA_SDK_MAVEN_PASSWORD=${JAVA_SDK_MAVEN_PASSWORD} maven:3-openjdk-8 mvn -Duser.home=/tmp -s settings.xml
-
-# The generator comes from the development shell (see flake.nix), which pins the
-# version the published client is generated with.
+# Maven, the JDK and the generator all come from the development shell (see
+# flake.nix), which pins the version the published client is generated with.
 TOOL_OPENAPI_GENERATOR := openapi-generator-cli
+MVN                    := mvn
+
+# The published client is for Java 8 consumers, but the shell's JDK is current.
+# `release` compiles against that JDK's Java 8 API signatures, which is what the
+# `source`/`target` 1.8 in the generated POM meant back when publishing ran on a
+# JDK 8 container; `source`/`target` alone would let a modern API be linked into
+# Java 8 bytecode. Only `publish` sets it: `install` and `test` below are also
+# run from CI on whatever JDK that job provides, and `release` needs a JDK 9+.
+JAVA_RELEASE          := 8
 
 publish: generate
 	# https://help.github.com/en/packages/using-github-packages-with-your-projects-ecosystem/configuring-apache-maven-for-use-with-github-packages
-	$(MVN) deploy -DskipTests -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/argoproj/argo-workflows
+	$(MVN) -f client -s settings.xml -Dmaven.compiler.release=$(JAVA_RELEASE) deploy -DskipTests -DaltDeploymentRepository=github::default::https://maven.pkg.github.com/argoproj/argo-workflows
 
 generate:
 	rm -Rf $(WD)
 	mkdir -p $(WD)
-	cp settings.xml $(WD)/settings.xml
 	cat ../../api/openapi-spec/swagger.json | \
 		sed 's/io.k8s.api.core.v1.//' | \
 		sed 's/io.k8s.apimachinery.pkg.apis.meta.v1.//' \
@@ -76,9 +81,9 @@ generate:
 client/pom.xml: generate
 
 install: client/pom.xml
-	mvn -f client install
+	$(MVN) -f client install
 
 test:
 	../../hack/access-token.sh init
 	kubectl delete wf --all
-	env ARGO_TOKEN="`../../hack/access-token.sh get`" mvn -f tests test
+	env ARGO_TOKEN="`../../hack/access-token.sh get`" $(MVN) -f tests test

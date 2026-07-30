@@ -21,7 +21,10 @@ jobs:
         - java
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: make --directory sdks/${{matrix.name}} publish -B
+      - uses: ./.github/actions/setup-nix
+      # The generator, the JDK and Maven all come from the development shell, so
+      # the published client is generated and built with the versions the
+      # repository pins rather than whatever the runner happens to ship.
+      - run: nix develop --command make --directory sdks/${{matrix.name}} publish -B
         env:
           JAVA_SDK_MAVEN_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
