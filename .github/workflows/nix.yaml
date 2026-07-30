@@ -1,0 +1,74 @@
+# Keeps the Cachix cache stocked with the development shell, so entering it is a
+# download everywhere else: on a contributor's machine, in the dev container and
+# in CI. Nothing depends on this workflow succeeding — a cold cache only means
+# the next `nix develop` builds the tools itself, slowly.
+#
+# Pushing needs a CACHIX_AUTH_TOKEN repository secret with write access to the
+# `argo-workflows` cache. Without one — on a fork — the jobs still build the
+# shell, they only read from the cache.
+name: Nix
+
+on:
+  push:
+    branches:
+      - main
+    paths: # keep in step with the pull_request list below
+      - flake.nix
+      - flake.lock
+      - go.mod # the flake takes the Go version from here
+      - .github/actions/setup-nix/action.yml
+      - .github/workflows/nix.yaml
+  # So that a change to the toolchain is built and reviewed before it is merged,
+  # rather than breaking everyone's shell afterwards.
+  pull_request:
+    paths:
+      - flake.nix
+      - flake.lock
+      - go.mod
+      - .github/actions/setup-nix/action.yml
+      - .github/workflows/nix.yaml
+  # The tools also stop being cached when nothing changes: Cachix evicts, and
+  # nixpkgs garbage-collects what our closure is built against.
+  schedule:
+    - cron: "0 4 * * 1" # Mondays, ahead of the working week
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux:
+    name: Build development shell (x86_64-linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-nix
+        with:
+          # Pull requests only read the cache, whoever opened them: a branch
+          # anyone can push to must not be able to write to a cache everyone
+          # else trusts.
+          cachix-auth-token: ${{ github.event_name != 'pull_request' && secrets.CACHIX_AUTH_TOKEN || '' }}
+      - name: Build the development shell
+        # Realises every tool the shell puts on PATH. Cachix pushes each one as
+        # it is built; anything substituted from cache.nixos.org is already
+        # public and is not copied into our cache.
+        run: nix develop --profile "$RUNNER_TEMP/devshell" --command true
+
+  darwin:
+    name: Build development shell (aarch64-darwin)
+    # A macOS runner bills at ten times the Linux rate, so this one sits out
+    # pull requests and warms the cache once the change is merged. Apple
+    # silicon only: nobody develops on x86_64-darwin any more.
+    if: github.event_name != 'pull_request'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/setup-nix
+        with:
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Build the development shell
+        run: nix develop --profile "$RUNNER_TEMP/devshell" --command true
