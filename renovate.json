@@ -23,6 +23,16 @@
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( versioning=(?<versioning>\\S+))?\\s+\\w+\\s*\\??=\\s*\"?(?<currentValue>[^\\s\"]+)\"?"
       ],
       "extractVersionTemplate": "^v(?<version>.+)$"
+    },
+    {
+      "description": "Update build arguments annotated with `# renovate:` in the dev container Dockerfile",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)\\.devcontainer/builder/Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( versioning=(?<versioning>\\S+))?\\s+ARG \\w+=(?<currentValue>\\S+)"
+      ]
     }
   ],
   "packageRules": [

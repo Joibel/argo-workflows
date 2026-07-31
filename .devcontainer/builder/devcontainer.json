@@ -12,14 +12,11 @@
     "args": { "BUILDKIT_INLINE_CACHE": "0" }
   },
 
+  // Language toolchains are not features here: they come from the Nix
+  // development shell the Dockerfile builds, at the versions flake.nix pins.
+  // Docker is the exception — it is a daemon, not a tool, so Nix does not
+  // manage it — and k3d needs one.
   "features": {
-    "ghcr.io/devcontainers/features/go:1": {
-      "version": "1.26.1"
-    },
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "20"
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
-    "ghcr.io/devcontainers/features/python:1": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   }
 }

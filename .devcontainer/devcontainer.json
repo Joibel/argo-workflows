@@ -17,7 +17,11 @@
     "--add-host=mysql:127.0.0.1",
     "--add-host=azurite:127.0.0.1"
   ],
-  "postCreateCommand": ".devcontainer/pre-build.sh",
+  // k3d and kubectl come from the development shell, so this runs inside it.
+  // The image ships a warm store, so entering it is a lookup, not a build.
+  // Interactive shells enter it themselves, see the .bashrc line in
+  // .devcontainer/builder/Dockerfile.
+  "postCreateCommand": "nix develop --command .devcontainer/pre-build.sh",
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/vscode/go/src/github.com/argoproj/argo-workflows,type=bind",
   "workspaceFolder": "/home/vscode/go/src/github.com/argoproj/argo-workflows",
   "remoteEnv": {
