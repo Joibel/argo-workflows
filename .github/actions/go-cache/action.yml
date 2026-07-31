@@ -7,6 +7,16 @@ description: >-
 
   Nix caches derivations, not incremental Go builds, so this stays GitHub-native.
 
+inputs:
+  key-suffix:
+    description: >-
+      Extra discriminator for the cache key. Jobs that compile the same code for
+      several targets — the release CLI matrix, say — write build caches that do
+      not overlap, and only the first to finish would get to save under a shared
+      key; give each one its own with e.g. `linux-arm64`. Leave unset when the
+      job builds for the runner it is on.
+    default: ""
+
 runs:
   using: composite
   steps:
@@ -17,6 +27,6 @@ runs:
           ~/go/pkg/mod
         # A build cache is only usable by the compiler that wrote it, and the
         # compiler comes from the flake, so its lock file belongs in the key.
-        key: ${{ runner.os }}-go-${{ hashFiles('flake.lock', 'go.mod') }}-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ inputs.key-suffix && format('{0}-', inputs.key-suffix) || '' }}${{ hashFiles('flake.lock', 'go.mod') }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-${{ hashFiles('flake.lock', 'go.mod') }}-
+          ${{ runner.os }}-go-${{ inputs.key-suffix && format('{0}-', inputs.key-suffix) || '' }}${{ hashFiles('flake.lock', 'go.mod') }}-

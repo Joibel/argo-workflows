@@ -113,12 +113,18 @@ Remember that [volume mounts on Windows can only target a directory](https://kub
 
 ## Building the workflow executor image for Windows
 
-To build the workflow executor image for Windows you need a Windows machine running Windows Server 2019 with Docker installed like described [in the docs](https://docs.docker.com/ee/docker-ee/windows/docker-ee/#install-docker-engine---enterprise).
+Building the image takes two machines, because the executable and the image are built separately.
 
-You then clone the project and run the Docker build with the `Dockerfile` for Windows and `argoexec` as a target:
+First cross-compile the executable, on Linux or macOS, in the [development shell](running-locally.md):
 
 ```bash
 git clone https://github.com/argoproj/argo-workflows.git
-cd argo
+cd argo-workflows
+nix develop --command make dist/argoexec.exe
+```
+
+Then, on a Windows machine running Windows Server 2019 with Docker installed as described [in the docs](https://docs.docker.com/ee/docker-ee/windows/docker-ee/#install-docker-engine---enterprise), copy `dist/argoexec.exe` into a checkout of the same commit and build the image, which only packages it:
+
+```bash
 docker build -t myargoexec -f .\Dockerfile.windows --target argoexec .
 ```

@@ -1,98 +1,37 @@
 #syntax=docker/dockerfile:1.25
-ARG GIT_COMMIT=unknown
-ARG GIT_TAG=unknown
-ARG GIT_TREE_STATE=unknown
 
-FROM golang:1.26.1-alpine3.23 AS builder
+# The Argo binaries are NOT compiled here. They are built on the host — by the
+# Nix development shell locally and in CI (`nix develop --command make
+# dist/...`) — and this file only assembles them into images. That keeps one
+# Go toolchain, the one flake.nix pins, instead of a second one baked into a
+# builder image that has to be kept in step with go.mod by hand.
+#
+# `dist/` is in .dockerignore apart from the binaries these stages COPY, so
+# build the binary you need before the image that carries it; `make
+# argoexec-image` and friends do that for you.
 
-# libc-dev to build openapi-gen
-RUN apk update && apk add --no-cache \
-    git \
-    make \
-    ca-certificates \
-    wget \
-    curl \
-    gcc \
-    libc-dev \
-    bash \
-    mailcap
+####################################################################################################
 
-WORKDIR /go/src/github.com/argoproj/argo-workflows
-COPY go.mod .
-COPY go.sum .
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
-
-COPY . .
+# mailcap ships /etc/mime.types, which argoexec reads to type artifacts. The
+# distroless base has no package manager, so take the file from Alpine.
+FROM alpine:3.24 AS mime-types
+RUN apk add --no-cache mailcap
 
 ####################################################################################################
 
 # Delve debugger, copied into the `-dev` images so the controller/server/executor
 # can be run under `dlv exec` when Tilt is invoked with `--debug=...`. Pinned to a
-# release that supports the builder's Go toolchain. Dev-only: never used by the
-# distroless production targets.
-FROM builder AS dlv-build
+# release that supports the Go toolchain it builds against. Dev-only: never used
+# by the distroless production targets, and the only compiler in this file.
+FROM golang:1.26.1-alpine3.23 AS dlv-build
 RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
     go install github.com/go-delve/delve/cmd/dlv@v1.27.0
 
 ####################################################################################################
 
-FROM node:20-alpine AS argo-ui
-
-RUN apk update && apk add --no-cache git
-
-COPY ui/package.json ui/yarn.lock ui/
-
-RUN --mount=type=cache,target=/root/.yarn \
-  YARN_CACHE_FOLDER=/root/.yarn JOBS=max \
-  yarn --cwd ui install --network-timeout 1000000
-
-COPY ui ui
-COPY api api
-
-RUN --mount=type=cache,target=/root/.yarn \
-  YARN_CACHE_FOLDER=/root/.yarn JOBS=max \
-  NODE_OPTIONS="--max-old-space-size=2048" JOBS=max yarn --cwd ui build
-
-####################################################################################################
-
-FROM builder AS argoexec-build
-
-ARG GIT_COMMIT
-ARG GIT_TAG
-ARG GIT_TREE_STATE
-
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build make dist/argoexec GIT_COMMIT=${GIT_COMMIT} GIT_TAG=${GIT_TAG} GIT_TREE_STATE=${GIT_TREE_STATE}
-
-####################################################################################################
-
-FROM builder AS workflow-controller-build
-
-ARG GIT_COMMIT
-ARG GIT_TAG
-ARG GIT_TREE_STATE
-
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build make dist/workflow-controller GIT_COMMIT=${GIT_COMMIT} GIT_TAG=${GIT_TAG} GIT_TREE_STATE=${GIT_TREE_STATE}
-
-####################################################################################################
-
-FROM builder AS argocli-build
-
-ARG GIT_COMMIT
-ARG GIT_TAG
-ARG GIT_TREE_STATE
-
-RUN mkdir -p ui/dist
-COPY --from=argo-ui ui/dist/app ui/dist/app
-# update timestamp so that `make` doesn't try to rebuild this -- it was already built in the previous stage
-RUN touch ui/dist/app/index.html
-
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build STATIC_FILES=true make dist/argo GIT_COMMIT=${GIT_COMMIT} GIT_TAG=${GIT_TAG} GIT_TREE_STATE=${GIT_TREE_STATE}
-
-####################################################################################################
-
 FROM gcr.io/distroless/static-debian13:latest@sha256:9197324ba51d9cd071af8505989365c006adf9d6d2067eada25aef00abbb5278 AS argoexec-base
 
-COPY --from=argoexec-build /etc/mime.types /etc/mime.types
+COPY --from=mime-types /etc/mime.types /etc/mime.types
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
 
@@ -102,14 +41,14 @@ FROM argoexec-base AS argoexec-nonroot
 
 USER 8737
 
-COPY --chown=8737 --from=argoexec-build /go/src/github.com/argoproj/argo-workflows/dist/argoexec /bin/
+COPY --chown=8737 dist/argoexec /bin/
 
 ENTRYPOINT [ "argoexec" ]
 
 ####################################################################################################
 FROM argoexec-base AS argoexec
 
-COPY --from=argoexec-build /go/src/github.com/argoproj/argo-workflows/dist/argoexec /bin/
+COPY dist/argoexec /bin/
 
 ENTRYPOINT [ "argoexec" ]
 
@@ -121,7 +60,7 @@ USER 8737
 
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
-COPY --chown=8737 --from=workflow-controller-build /go/src/github.com/argoproj/argo-workflows/dist/workflow-controller /bin/
+COPY --chown=8737 dist/workflow-controller /bin/
 
 ENTRYPOINT [ "workflow-controller" ]
 
@@ -135,15 +74,13 @@ WORKDIR /home/argo
 
 COPY hack/ssh_known_hosts /etc/ssh/
 COPY hack/nsswitch.conf /etc/
-COPY --from=argocli-build /go/src/github.com/argoproj/argo-workflows/dist/argo /bin/
+COPY dist/argo /bin/
 
 ENTRYPOINT [ "argo" ]
 
 ####################################################################################################
-# Dev-only stages for Tilt. Small alpine base; NOT shipped to users. The
-# binaries are compiled on the host (by Tilt local_resources) and COPYed from
-# the build context, so each binary is built exactly once. On change Tilt
-# rebuilds these (trivial COPY) and recreates the pod.
+# Dev-only stages for Tilt. Small alpine base; NOT shipped to users. On change
+# Tilt rebuilds these (trivial COPY) and recreates the pod.
 
 FROM alpine:3.24 AS workflow-controller-dev
 RUN apk add --no-cache ca-certificates
