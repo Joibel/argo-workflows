@@ -61,11 +61,15 @@ slower the first time and after each tool upgrade.
 Everything lives in `flake.nix`, in two tiers:
 
 * **Pinned.** Anything whose version is part of a contract — it decides what generated code, lint results or test
-  output look like. Each has an explicit version and hash. To upgrade one, change its entry in `toolVersions` and
-  rebuild: Nix will report the hash mismatch and print the hash to paste in. Go tools need both the source `hash` and
-  the `vendorHash` updating; the second only shows up once the first is right.
+  output look like. Each has an explicit version and hash. To upgrade one, change its entry in `toolVersions` and run
+  `hack/nix/update-hashes.sh`, which refetches what each tool downloads and writes the new hashes back. Adding a tool
+  works the same way: write `lib.fakeHash` for the hash you do not know yet and let the script fill it in.
 * **Floating.** Editors, clients and the local cluster, taken from nixpkgs as-is. These move when the `nixpkgs` input
   moves — `nix flake update` — rather than one at a time.
+
+Most of these arrive as a pull request rather than by hand. Renovate watches the `# renovate:` comments in `flake.nix`
+and bumps the versions, then a workflow runs the same script on its branch so the hashes land with it. It refreshes the
+`nixpkgs` pin weekly, which is what moves the floating tier. The few pins it deliberately leaves alone say so in place.
 
 The Go toolchain is not listed in either tier: it is read straight from the `go` directive in `go.mod`. When nixpkgs
 lags behind that version, the flake tells you to add the Go source tarball's hash to `goSrcHashes` and builds that

@@ -10,7 +10,10 @@
     "release-4.0"
   ],
   "nix": {
-    "enabled": true
+    "enabled": true,
+    "schedule": [
+      "before 4am on monday"
+    ]
   },
   "customManagers": [
     {
@@ -33,6 +36,17 @@
       "matchStrings": [
         "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( versioning=(?<versioning>\\S+))?\\s+ARG \\w+=(?<currentValue>\\S+)"
       ]
+    },
+    {
+      "description": "Update the pinned tool versions annotated with `# renovate:` in flake.nix. The hashes underneath them are fixed up by .github/workflows/nix-hashes.yml",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)flake\\.nix$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)( versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "extractVersionTemplate": "^v?(?<version>.+)$"
     }
   ],
   "packageRules": [
@@ -93,11 +107,52 @@
         "lockFileMaintenance"
       ],
       "enabled": false
+    },
+    {
+      "description": "Never automerge a pinned nix tool: the version decides what generated code, lint results or test output look like, and the hashes below it are rewritten by a follow-up commit",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "flake.nix"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "The code generators run against the k8s.io/apimachinery in go.mod, so their minor version moves by hand when that does",
+      "matchFileNames": [
+        "flake.nix"
+      ],
+      "matchPackageNames": [
+        "k8s.io/code-generator"
+      ],
+      "matchUpdateTypes": [
+        "major",
+        "minor"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "properdocs is pinned twice, for the docs build and for the nix shell, so move both at once",
+      "matchPackageNames": [
+        "properdocs"
+      ],
+      "groupName": "properdocs"
+    },
+    {
+      "description": "The nixpkgs pin moves every floating tool at once, so it is reviewed rather than automerged",
+      "matchManagers": [
+        "nix"
+      ],
+      "automerge": false
     }
   ],
   "platformAutomerge": true,
   "lockFileMaintenance": {
-    "enabled": true
+    "enabled": true,
+    "schedule": [
+      "before 4am on monday"
+    ]
   },
   "postUpdateOptions": [
     "yarnDedupeFewer",
